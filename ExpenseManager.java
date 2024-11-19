@@ -5,23 +5,40 @@ import java.util.stream.Collectors;
 
 public class ExpenseManager {
     private List<Expense> expenses;
-    private static final List<String> predefinedCategories = List.of(
-            "Food", "Transportation", "Entertainment", "Utilities", "Miscellaneous"
+    public static final List<String> predefinedCategories = List.of(
+        "Food", "Transportation", "Entertainment", "Utilities", "Miscellaneous"
     );
+    private BudgetManager budgetManager;
+    private Runnable guiUpdateCallback; // Callback to update GUI
 
     public ExpenseManager() {
         this.expenses = new ArrayList<>();
+        this.budgetManager = new BudgetManager(this);
+    }
+
+    public void setGuiUpdateCallback(Runnable callback) {
+        this.guiUpdateCallback = callback;
     }
 
     // Add an expense
     public void addExpense(Expense expense) {
+    	
         expenses.add(expense);
+        updateBudgets();
+        if (guiUpdateCallback != null) {
+            guiUpdateCallback.run(); //trigger GUI updates
+        }
     }
+
 
     // Edit an expense
     public void editExpense(int index, Expense newExpense) {
         if (index >= 0 && index < expenses.size()) {
             expenses.set(index, newExpense);
+            updateBudgets();
+            if (guiUpdateCallback != null) {
+                guiUpdateCallback.run();
+            }
         } else {
             throw new IndexOutOfBoundsException("Invalid expense index.");
         }
@@ -31,6 +48,10 @@ public class ExpenseManager {
     public void deleteExpense(int index) {
         if (index >= 0 && index < expenses.size()) {
             expenses.remove(index);
+            updateBudgets();
+            if (guiUpdateCallback != null) {
+                guiUpdateCallback.run();
+            }
         } else {
             throw new IndexOutOfBoundsException("Invalid expense index.");
         }
@@ -57,7 +78,16 @@ public class ExpenseManager {
     }
 
     // Get predefined categories
-    public List<String> getPredefinedCategories() {
+    public static List<String> getPredefinedCategories() {
         return predefinedCategories;
+    }
+
+    public BudgetManager getBudgetManager() {
+        return budgetManager;
+    }
+
+    // Update budgets when expenses are added, edited, or removed
+    private void updateBudgets() {
+        budgetManager.getAllBudgets(); 
     }
 }
