@@ -23,7 +23,36 @@ public class FinanceApp {
         
         createFinanceAppFrame();
         addBudgetManagementFeatures();
+        createReportFeatures();
     }
+    
+    private void createReportFeatures() {
+ 
+        JButton reportButton = new JButton("View Monthly Report");
+        reportButton.addActionListener(e -> showReportManagerPanel());
+        
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(reportButton);
+        
+        frame.add(buttonPanel, BorderLayout.NORTH);
+    }
+
+
+    private void showReportManagerPanel() {
+
+        JFrame reportFrame = new JFrame("Monthly Report");
+        reportFrame.setSize(800, 600);
+        reportFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+
+        ReportManager reportManager = new ReportManager(expenseManager);
+        ReportManagerPanel reportManagerPanel = new ReportManagerPanel(reportManager);
+        reportFrame.add(reportManagerPanel);
+
+ 
+        reportFrame.setVisible(true);
+    }
+
 
 
     private void createFinanceAppFrame() {
