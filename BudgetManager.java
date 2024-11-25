@@ -4,11 +4,16 @@ import java.util.Map;
 public class BudgetManager {
     private Map<String, Double> budgets;
     private ExpenseManager expenseManager;
+    private Runnable updateCallback;
 
     public BudgetManager(ExpenseManager expenseManager) {
         this.expenseManager = expenseManager;
         this.budgets = new HashMap<>();
         initializeDefaultBudgets();
+    }
+    
+    public void setUpdateCallback(Runnable callback) {
+        this.updateCallback = callback;
     }
 
     private void initializeDefaultBudgets() {
@@ -20,6 +25,9 @@ public class BudgetManager {
 
     public void setBudget(String category, double amount) {
         budgets.put(category, amount);
+        if (updateCallback != null) {
+            updateCallback.run();
+        }
     }
 
     public double getBudget(String category) {
