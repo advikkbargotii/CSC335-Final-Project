@@ -32,7 +32,8 @@ public class BudgetManagerPanel extends JPanel {
         JProgressBar progressBar = progressBars.get(category);
         progressBar.setValue(progress);
 
-        if (progress >= 80) {
+        
+        if (progress >= 80 ) {
             progressBar.setForeground(Color.RED);
         } else {
             progressBar.setForeground(Color.GREEN);
