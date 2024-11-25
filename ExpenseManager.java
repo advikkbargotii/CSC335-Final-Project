@@ -9,7 +9,7 @@ public class ExpenseManager {
         "Food", "Transportation", "Entertainment", "Utilities", "Miscellaneous"
     );
     private BudgetManager budgetManager;
-    private Runnable guiUpdateCallback; // Callback to update GUI
+    private Runnable guiUpdateCallback;
 
     public ExpenseManager() {
         this.expenses = new ArrayList<>();
@@ -18,6 +18,16 @@ public class ExpenseManager {
 
     public void setGuiUpdateCallback(Runnable callback) {
         this.guiUpdateCallback = callback;
+    }
+    
+    public Runnable getGuiUpdateCallback() {
+        return guiUpdateCallback;
+    }
+    
+    public void triggerUpdate() {
+        if (guiUpdateCallback != null) {
+            guiUpdateCallback.run();
+        }
     }
 
     // Add an expense
@@ -83,6 +93,7 @@ public class ExpenseManager {
     }
 
     public BudgetManager getBudgetManager() {
+    	budgetManager.setUpdateCallback(this::triggerUpdate);
         return budgetManager;
     }
 
@@ -90,4 +101,5 @@ public class ExpenseManager {
     private void updateBudgets() {
         budgetManager.getAllBudgets(); 
     }
+    
 }
