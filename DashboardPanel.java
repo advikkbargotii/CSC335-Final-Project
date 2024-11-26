@@ -65,7 +65,7 @@ public class DashboardPanel extends JPanel {
         label.setHorizontalAlignment(SwingConstants.CENTER);
         label.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            new EmptyBorder(10, 20, 10, 20)
+            new EmptyBorder(20, 30, 20, 30)
         ));
         label.setOpaque(true);
         label.setBackground(Color.WHITE);
@@ -192,6 +192,8 @@ public class DashboardPanel extends JPanel {
         totalBudgetLabel.setText(createSummaryHTML("Total Budget", currencyFormatter.format(totalBudget)));
         totalExpensesLabel.setText(createSummaryHTML("Total Expenses", currencyFormatter.format(totalExpenses)));
         remainingBudgetLabel.setText(createSummaryHTML("Remaining Budget", currencyFormatter.format(remainingBudget)));
+        revalidate();
+        repaint();
     }
 
     private String createSummaryHTML(String title, String value) {
