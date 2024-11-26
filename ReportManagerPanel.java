@@ -21,10 +21,15 @@ public class ReportManagerPanel extends JPanel {
         reportTextArea.setEditable(false);
         reportTextArea.setLineWrap(true);
         reportTextArea.setWrapStyleWord(true);
+
+        reportTextArea.setBorder(BorderFactory.createCompoundBorder(
+            reportTextArea.getBorder(),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+
         JScrollPane scrollPane = new JScrollPane(reportTextArea);
         add(scrollPane, BorderLayout.CENTER);
 
-        
         refreshButton = new JButton("Refresh Report");
         refreshButton.addActionListener(e -> refreshReport());
         add(refreshButton, BorderLayout.SOUTH);
@@ -36,18 +41,33 @@ public class ReportManagerPanel extends JPanel {
                 drawPieChart(g);
             }
         };
-        
+
         pieChartPanel.setPreferredSize(new Dimension(400, 400));
         add(pieChartPanel, BorderLayout.EAST);
-
 
         refreshReport();
     }
 
-    private void drawPieChart(Graphics g) {
 
+    private void drawPieChart(Graphics g) {
         Map<String, Double> spendingData = reportManager.getCategoryWiseSpending();
 
+        // Check if there is no data
+        if (spendingData.isEmpty() || spendingData.values().stream().allMatch(spending -> spending == 0)) {
+            int x = 10, y = 10, width = 300, height = 300;
+
+            g.setColor(Color.LIGHT_GRAY);
+            g.drawOval(x, y, width, height);
+            g.setFont(new Font("Arial", Font.BOLD, 16));
+            g.setColor(Color.BLACK);
+            String message = "No data available";
+            FontMetrics fm = g.getFontMetrics();
+            int textWidth = fm.stringWidth(message);
+            int textHeight = fm.getAscent();
+            g.drawString(message, x + (width - textWidth) / 2, y + (height + textHeight) / 2);
+
+            return;
+        }
 
         Map<String, Color> categoryColors = Map.of(
             "Food", Color.GREEN,
@@ -57,9 +77,7 @@ public class ReportManagerPanel extends JPanel {
             "Miscellaneous", Color.CYAN
         );
 
-
         double totalSpending = spendingData.values().stream().mapToDouble(Double::doubleValue).sum();
-
 
         int x = 10, y = 10, width = 300, height = 300;
         int startAngle = 0;
@@ -77,17 +95,34 @@ public class ReportManagerPanel extends JPanel {
         drawLegend(g, categoryColors, spendingData, x + width + 20, y);
     }
 
+
     private void drawLegend(Graphics g, Map<String, Color> categoryColors, Map<String, Double> spendingData, int x, int y) {
         int legendY = y;
+        int padding = 10;
+
+
+        int maxTextWidth = spendingData.keySet().stream()
+            .mapToInt(category -> g.getFontMetrics().stringWidth(category))
+            .max()
+            .orElse(0);
+
+        int rectWidth = 20;
+        int rectHeight = 20;
+        int spacing = 10;
 
         for (String category : spendingData.keySet()) {
             g.setColor(categoryColors.getOrDefault(category, Color.GRAY));
-            g.fillRect(x, legendY, 20, 20);
+            g.fillRect(x, legendY, rectWidth, rectHeight);
             g.setColor(Color.BLACK);
-            g.drawString(category, x + 30, legendY + 15);
-            legendY += 30;
+            g.drawString(category, x + rectWidth + padding, legendY + rectHeight - 5);
+            legendY += rectHeight + spacing;
         }
+
+
+        int totalWidth = x + rectWidth + padding + maxTextWidth + padding;
+        pieChartPanel.setPreferredSize(new Dimension(Math.max(totalWidth, 400), 400));
     }
+
     
     private void refreshReport() {
 
