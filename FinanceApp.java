@@ -76,10 +76,10 @@ public class FinanceApp {
         expenseTrackerPanel = new ExpenseTrackerPanel(expenseManager);
         tabbedPane.addTab("Expenses", new ImageIcon(), expenseTrackerPanel, "Manage your expenses");
         
-        // Create budget panel with progress bars
-        budgetManagerPanel = new BudgetManagerPanel(expenseManager.getBudgetManager());
-        tabbedPane.addTab("Budgets", new ImageIcon(), budgetManagerPanel, "Manage your budgets");
-        
+     // Create budget panel with progress bars
+        JPanel budgetPanel = createBudgetProgressPanel();
+        tabbedPane.addTab("Budgets", new ImageIcon(), budgetPanel, "Manage your budgets");
+
         // Create and add report manager panel
         ReportManager reportManager = new ReportManager(expenseManager);
         ReportManagerPanel reportManagerPanel = new ReportManagerPanel(reportManager);
@@ -291,4 +291,87 @@ public class FinanceApp {
             budgetManagerPanel.updateAllProgressBars();
         }
     }
+    
+    private JPanel createBudgetProgressPanel() {
+        JPanel budgetPanel = new JPanel(new GridLayout(0, 4, 10, 10));
+        budgetPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder("Budget Progress"),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+
+        for (String category : ExpenseManager.predefinedCategories) {
+            JPanel categoryPanel = new JPanel(new BorderLayout(5, 5));
+            categoryPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            
+            JLabel label = new JLabel(category);
+            label.setFont(new Font("Arial", Font.BOLD, 12));
+            
+            JPanel inputPanel = new JPanel(new BorderLayout(5, 0));
+            JTextField budgetField = new JTextField(8);
+            JButton setButton = createStyledButton("Set");
+            
+            inputPanel.add(budgetField, BorderLayout.CENTER);
+            inputPanel.add(setButton, BorderLayout.EAST);
+            
+            JProgressBar progressBar = new JProgressBar(0, 100);
+            progressBar.setStringPainted(true);
+            progressBar.setPreferredSize(new Dimension(progressBar.getPreferredSize().width, 20));
+            progressBars.put(category, progressBar);
+
+            setButton.addActionListener(e -> {
+                try {
+                    double amount = Double.parseDouble(budgetField.getText());
+                    if (amount < 0) {
+                        throw new IllegalArgumentException("Budget cannot be negative");
+                    }
+                    expenseManager.getBudgetManager().setBudget(category, amount);
+                    budgetField.setText("");
+                    JOptionPane.showMessageDialog(frame, 
+                        String.format("Budget set for %s: $%.2f", category, amount),
+                        "Budget Updated",
+                        JOptionPane.INFORMATION_MESSAGE);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(frame,
+                        "Please enter a valid number",
+                        "Invalid Input",
+                        JOptionPane.ERROR_MESSAGE);
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(frame,
+                        ex.getMessage(),
+                        "Invalid Input",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            });
+
+            categoryPanel.add(label, BorderLayout.NORTH);
+            categoryPanel.add(inputPanel, BorderLayout.CENTER);
+            categoryPanel.add(progressBar, BorderLayout.SOUTH);
+            
+            budgetPanel.add(categoryPanel);
+        }
+
+        return budgetPanel;
+    }
+    
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+        button.setFocusPainted(false); 
+        button.setBackground(Color.LIGHT_GRAY); 
+        button.setForeground(Color.BLUE); 
+        button.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); 
+
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(48, 63, 159));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(63, 81, 181)); 
+            }
+        });
+
+        return button; 
+
+
+}
 }
