@@ -40,28 +40,26 @@ public class Main {
             public void mouseExited(MouseEvent evt) {
                 button.setBackground(new Color(63, 81, 181));
             }
-        });
+        }); 
 
         return button;
     }
 
     private static void loadUserData() {
         try {
-            // Create data directory if it doesn't exist
             Files.createDirectories(Paths.get("data"));
-            
-            // Create users file if it doesn't exist
+
             if (!Files.exists(Paths.get(USER_DATA_FILE))) {
                 Files.createFile(Paths.get(USER_DATA_FILE));
             }
-            
+
             List<String> lines = Files.readAllLines(Paths.get(USER_DATA_FILE));
-            users.clear(); // Clear existing users before loading
-            
+            users.clear();
+
             for (String line : lines) {
                 String[] parts = line.split(":");
-                if (parts.length == 2) {
-                    users.add(new User(parts[0], parts[1], true));
+                if (parts.length == 3) { // Ensure username, hash, and salt are present
+                    users.add(new User(parts[0], parts[1], parts[2])); // Pass salt to User constructor
                 }
             }
             System.out.println("Loaded " + users.size() + " users from file");
@@ -71,41 +69,38 @@ public class Main {
         }
     }
 
+
     private static void saveUserData(User user) {
         try {
-            // Create directories if they don't exist
             Files.createDirectories(Paths.get("data"));
-            
-            // Check if user already exists
             boolean userExists = false;
             List<String> lines = new ArrayList<>();
-            
+
             if (Files.exists(Paths.get(USER_DATA_FILE))) {
                 lines = Files.readAllLines(Paths.get(USER_DATA_FILE));
                 for (int i = 0; i < lines.size(); i++) {
                     String[] parts = lines.get(i).split(":");
                     if (parts[0].equals(user.getUsername())) {
-                        lines.set(i, user.getUsername() + ":" + user.getPasswordHash());
+                        lines.set(i, user.getUsername() + ":" + user.getPasswordHash() + ":" + user.getSalt());
                         userExists = true;
                         break;
                     }
                 }
             }
-            
-            // If user doesn't exist, add them
+
             if (!userExists) {
-                lines.add(user.getUsername() + ":" + user.getPasswordHash());
+                lines.add(user.getUsername() + ":" + user.getPasswordHash() + ":" + user.getSalt());
             }
-            
-            // Write all lines back to file
+
             Files.write(Paths.get(USER_DATA_FILE), lines);
             System.out.println("Saved user data for: " + user.getUsername());
-            
+
         } catch (IOException e) {
             System.err.println("Error saving user data: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 
     private static void createMainFrame() {
         mainFrame = new JFrame("Personal Finance Assistant");
@@ -364,16 +359,14 @@ public class Main {
     }
 
     private static boolean authenticateUser(String username, String password) {
-        try {
-            String passwordHash = hashPassword(password);
-            return users.stream()
-                .anyMatch(user -> user.getUsername().equals(username) && 
-                                user.getPasswordHash().equals(passwordHash));
-        } catch (NoSuchAlgorithmException e) {
-            System.err.println("Error during authentication: " + e.getMessage());
-            return false;
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                return user.checkPassword(password); // Hashes password with the stored salt for verification
+            }
         }
+        return false;
     }
+
 
     private static String hashPassword(String password) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
