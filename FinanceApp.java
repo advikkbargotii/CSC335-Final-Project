@@ -70,20 +70,20 @@ public class FinanceApp {
         
         // Create and add dashboard panel
         dashboardPanel = new DashboardPanel(expenseManager, currentUser);
-        tabbedPane.addTab("Dashboard", new ImageIcon(), dashboardPanel, "View your financial overview");
+        tabbedPane.addTab("Dashboard", new ImageIcon("dashboard.png"), dashboardPanel, "View your financial overview");
         
         // Create and add expense tracker panel
         expenseTrackerPanel = new ExpenseTrackerPanel(expenseManager);
-        tabbedPane.addTab("Expenses", new ImageIcon(), expenseTrackerPanel, "Manage your expenses");
+        tabbedPane.addTab("Expenses", new ImageIcon("expense.png"), expenseTrackerPanel, "Manage your expenses");
         
      // Create budget panel with progress bars
         JPanel budgetPanel = createBudgetProgressPanel();
-        tabbedPane.addTab("Budgets", new ImageIcon(), budgetPanel, "Manage your budgets");
+        tabbedPane.addTab("Budgets", new ImageIcon("budget.jpeg"), budgetPanel, "Manage your budgets");
 
         // Create and add report manager panel
         ReportManager reportManager = new ReportManager(expenseManager);
         ReportManagerPanel reportManagerPanel = new ReportManagerPanel(reportManager);
-        tabbedPane.addTab("Reports", new ImageIcon(), reportManagerPanel, "View financial reports");
+        tabbedPane.addTab("Reports", new ImageIcon("report.png"), reportManagerPanel, "View financial reports");
         
         // Add menu bar
         frame.setJMenuBar(createMenuBar());
@@ -300,11 +300,11 @@ public class FinanceApp {
         ));
 
         for (String category : ExpenseManager.predefinedCategories) {
-            JPanel categoryPanel = new JPanel(new BorderLayout(5, 5));
-            categoryPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            JPanel categoryPanel = new JPanel(new BorderLayout(3, 3));
+            categoryPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
             
             JLabel label = new JLabel(category);
-            label.setFont(new Font("Arial", Font.BOLD, 12));
+            label.setFont(new Font("Times New Roman", Font.BOLD, 24));
             
             JPanel inputPanel = new JPanel(new BorderLayout(5, 0));
             JTextField budgetField = new JTextField(8);
