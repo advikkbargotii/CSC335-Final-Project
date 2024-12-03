@@ -97,4 +97,38 @@ class UserTest {
         User user2 = new User("user2", "password123");
         assertFalse(user1.getUsername().equals(user2.getUsername()), "Users with different usernames should not be equal.");
     }
+    
+    @Test
+    public void testGetSalt() {
+        // Arrange: Create a User with a known password
+        User user = new User("testUser", "password123");
+
+        // Act: Retrieve the salt of the user
+        String salt = user.getSalt();
+
+        // Assert: The salt should not be null or empty
+        assertNotNull(salt, "Salt should not be null");
+        assertFalse(salt.isEmpty(), "Salt should not be empty");
+
+        // Additional checks: The salt should be unique for different users
+        User anotherUser = new User("anotherUser", "anotherPassword123");
+        String anotherSalt = anotherUser.getSalt();
+        assertNotEquals(salt, anotherSalt, "Salt should be unique for different users");
+    }
+    
+    @Test
+    public void testConstructorWithExistingData() {
+        // Arrange
+        String username = "testUser";
+        String passwordHash = "hashedPassword123"; // Assume this is the correct hash
+        String salt = "randomSalt123"; // A generated salt for the user
+
+        // Act
+        User user = new User(username, passwordHash, salt);
+
+        // Assert
+        assertEquals(username, user.getUsername(), "Username should be initialized correctly.");
+        assertEquals(passwordHash, user.getPasswordHash(), "Password hash should be initialized correctly.");
+        assertEquals(salt, user.getSalt(), "Salt should be initialized correctly.");
+    }
 }
