@@ -10,53 +10,67 @@ public class FinanceApp {
     private ExpenseManager expenseManager;
     private DataPersistenceManager dataPersistenceManager;
     private JFrame frame;
-    private Map<String, JProgressBar> progressBars;
+    private JTabbedPane tabbedPane;
     private DashboardPanel dashboardPanel;
     private ExpenseTrackerPanel expenseTrackerPanel;
     private BudgetManagerPanel budgetManagerPanel;
+    private ReportManagerPanel reportManagerPanel;
 
     public FinanceApp(User user) {
         this.currentUser = user;
         this.expenseManager = new ExpenseManager();
         this.dataPersistenceManager = new DataPersistenceManager();
-        this.progressBars = new HashMap<>();
         
+        initializeApplication();
+    }
+
+    private void initializeApplication() {
         // Load saved data
+        loadUserData();
+        
+        // Create the main application frame and components
+        createFinanceAppFrame();
+        
+        // Set up auto-save functionality
+        setupAutoSave();
+        
+        // Set up GUI update callback
+        setupUpdateCallback();
+    }
+
+    private void loadUserData() {
         try {
             dataPersistenceManager.loadUserData(currentUser, expenseManager);
+            System.out.println("Successfully loaded user data for: " + currentUser.getUsername());
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null,
                 "Error loading user data: " + e.getMessage(),
                 "Data Load Error",
                 JOptionPane.ERROR_MESSAGE);
+            System.err.println("Error loading user data: " + e.getMessage());
+            e.printStackTrace();
         }
-        
-        // Set up auto-save
+    }
+
+    private void setupAutoSave() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 dataPersistenceManager.saveUserData(currentUser, expenseManager);
+                System.out.println("Auto-save completed successfully");
             } catch (Exception e) {
-                System.err.println("Error saving data during shutdown: " + e.getMessage());
+                System.err.println("Error during auto-save: " + e.getMessage());
+                e.printStackTrace();
             }
         }));
-        
-        // Set up GUI update callback
+    }
+
+    private void setupUpdateCallback() {
         expenseManager.setGuiUpdateCallback(() -> {
             SwingUtilities.invokeLater(() -> {
-                updateAllProgressBars();
-                if (dashboardPanel != null) {
-                    dashboardPanel.updateFinancialSummary();
-                }
-                // Save data after updates
-                try {
-                    dataPersistenceManager.saveUserData(currentUser, expenseManager);
-                } catch (Exception e) {
-                    System.err.println("Error saving data: " + e.getMessage());
-                }
+                updateAllComponents();
+                saveCurrentData();
             });
         });
-        
-        createFinanceAppFrame();
     }
 
     private void createFinanceAppFrame() {
@@ -65,25 +79,11 @@ public class FinanceApp {
         frame.setSize(1200, 800);
         frame.setMinimumSize(new Dimension(1000, 600));
 
-        // Create main tabbed pane
-        JTabbedPane tabbedPane = new JTabbedPane();
+        // Initialize tabbedPane
+        tabbedPane = new JTabbedPane();
         
-        // Create and add dashboard panel
-        dashboardPanel = new DashboardPanel(expenseManager, currentUser);
-        tabbedPane.addTab("Dashboard", new ImageIcon("dashboard.png"), dashboardPanel, "View your financial overview");
-        
-        // Create and add expense tracker panel
-        expenseTrackerPanel = new ExpenseTrackerPanel(expenseManager);
-        tabbedPane.addTab("Expenses", new ImageIcon("expense.png"), expenseTrackerPanel, "Manage your expenses");
-        
-     // Create budget panel with progress bars
-        JPanel budgetPanel = createBudgetProgressPanel();
-        tabbedPane.addTab("Budgets", new ImageIcon("budget.jpeg"), budgetPanel, "Manage your budgets");
-
-        // Create and add report manager panel
-        ReportManager reportManager = new ReportManager(expenseManager);
-        ReportManagerPanel reportManagerPanel = new ReportManagerPanel(reportManager);
-        tabbedPane.addTab("Reports", new ImageIcon("report.png"), reportManagerPanel, "View financial reports");
+        // Create and initialize all panels
+        initializePanels();
         
         // Add menu bar
         frame.setJMenuBar(createMenuBar());
@@ -91,9 +91,33 @@ public class FinanceApp {
         // Add tabbed pane to frame
         frame.add(tabbedPane);
         
-        // Center frame on screen
+        // Center frame on screen and display
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    private void initializePanels() {
+        // Create all panels
+        dashboardPanel = new DashboardPanel(expenseManager, currentUser, tabbedPane);
+        expenseTrackerPanel = new ExpenseTrackerPanel(expenseManager);
+        budgetManagerPanel = new BudgetManagerPanel(expenseManager.getBudgetManager());
+        reportManagerPanel = new ReportManagerPanel(new ReportManager(expenseManager));
+
+        // Add panels to tabbed pane with icons
+        tabbedPane.addTab("Dashboard", loadIcon("dashboard.png"), dashboardPanel, "View your financial overview");
+        tabbedPane.addTab("Expenses", loadIcon("expense.png"), expenseTrackerPanel, "Manage your expenses");
+        tabbedPane.addTab("Budget", loadIcon("budget.jpeg"), budgetManagerPanel, "Manage your budgets");
+        tabbedPane.addTab("Reports", loadIcon("report.png"), reportManagerPanel, "View financial reports");
+    }
+
+    private ImageIcon loadIcon(String filename) {
+        try {
+            ImageIcon icon = new ImageIcon(filename);
+            return icon;
+        } catch (Exception e) {
+            System.err.println("Could not load icon: " + filename);
+            return new ImageIcon(); // Return empty icon if loading fails
+        }
     }
 
     private JMenuBar createMenuBar() {
@@ -101,7 +125,19 @@ public class FinanceApp {
         
         // File menu
         JMenu fileMenu = new JMenu("File");
+        addMenuItems(fileMenu);
         
+        // Import/Export menu
+        JMenu importExportMenu = new JMenu("Import/Export");
+        addImportExportItems(importExportMenu);
+        
+        menuBar.add(fileMenu);
+        menuBar.add(importExportMenu);
+        
+        return menuBar;
+    }
+
+    private void addMenuItems(JMenu fileMenu) {
         JMenuItem saveItem = new JMenuItem("Save Data");
         saveItem.addActionListener(e -> saveCurrentData());
         
@@ -115,10 +151,9 @@ public class FinanceApp {
         fileMenu.add(backupItem);
         fileMenu.addSeparator();
         fileMenu.add(logoutItem);
+    }
 
-        // Import/Export menu
-        JMenu importExportMenu = new JMenu("Import/Export");
-        
+    private void addImportExportItems(JMenu importExportMenu) {
         JMenuItem importItem = new JMenuItem("Import Transactions");
         importItem.addActionListener(e -> importTransactions());
         
@@ -127,21 +162,38 @@ public class FinanceApp {
         
         importExportMenu.add(importItem);
         importExportMenu.add(exportItem);
-        
-        // Reports menu
-        JMenu reportsMenu = new JMenu("Reports");
-        
-        JMenuItem monthlyReportItem = new JMenuItem("Monthly Report");
-        monthlyReportItem.addActionListener(e -> showReportManagerPanel());
-        
-        reportsMenu.add(monthlyReportItem);
-        
-        // Add all menus to menu bar
-        menuBar.add(fileMenu);
-        menuBar.add(importExportMenu);
-        menuBar.add(reportsMenu);
-        
-        return menuBar;
+    }
+
+    private void updateAllComponents() {
+        if (dashboardPanel != null) {
+            dashboardPanel.updateFinancialSummary();
+        }
+        if (budgetManagerPanel != null) {
+            budgetManagerPanel.updateAllProgressBars();
+        }
+    }
+
+    private void saveCurrentData() {
+        try {
+            dataPersistenceManager.saveUserData(currentUser, expenseManager);
+        } catch (Exception e) {
+            System.err.println("Error saving data: " + e.getMessage());
+        }
+    }
+
+    private void createDataBackup() {
+        try {
+            dataPersistenceManager.backupUserData(currentUser);
+            JOptionPane.showMessageDialog(frame,
+                "Backup created successfully!",
+                "Backup Success",
+                JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(frame,
+                "Error creating backup: " + e.getMessage(),
+                "Backup Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void importTransactions() {
@@ -156,7 +208,7 @@ public class FinanceApp {
                     "Transactions imported successfully!",
                     "Import Success",
                     JOptionPane.INFORMATION_MESSAGE);
-                updateAllProgressBars();
+                updateAllComponents();
             } catch (TransactionFileHandler.TransactionImportException e) {
                 JOptionPane.showMessageDialog(frame,
                     e.getMessage(),
@@ -193,39 +245,9 @@ public class FinanceApp {
         }
     }
 
-    private void saveCurrentData() {
-        try {
-            dataPersistenceManager.saveUserData(currentUser, expenseManager);
-            JOptionPane.showMessageDialog(frame,
-                "Data saved successfully!",
-                "Save Success",
-                JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(frame,
-                "Error saving data: " + e.getMessage(),
-                "Save Error",
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void createDataBackup() {
-        try {
-            dataPersistenceManager.backupUserData(currentUser);
-            JOptionPane.showMessageDialog(frame,
-                "Backup created successfully!",
-                "Backup Success",
-                JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(frame,
-                "Error creating backup: " + e.getMessage(),
-                "Backup Error",
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
     private void logout() {
         try {
-            dataPersistenceManager.saveUserData(currentUser, expenseManager);
+            saveCurrentData();
             frame.dispose();
             Main.showMainWindow();
         } catch (Exception e) {
@@ -235,143 +257,4 @@ public class FinanceApp {
                 JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    private void showReportManagerPanel() {
-        JDialog reportDialog = new JDialog(frame, "Monthly Report", true);
-        reportDialog.setSize(900, 700);
-        reportDialog.setLocationRelativeTo(frame);
-
-        ReportManager reportManager = new ReportManager(expenseManager);
-        ReportManagerPanel reportManagerPanel = new ReportManagerPanel(reportManager);
-        reportDialog.add(reportManagerPanel);
-
-        reportDialog.setVisible(true);
-    }
-
-    private void updateProgress(String category) {
-        double totalExpenses = expenseManager.getBudgetManager().calculateTotalExpensesByCategory(category);
-        double budget = expenseManager.getBudgetManager().getBudget(category);
-        
-        if (budget <= 0) {
-            return;
-        }
-        
-        int progressValue = (int) ((totalExpenses / budget) * 100);
-        JProgressBar progressBar = progressBars.get(category);
-        
-        if (progressBar != null) {
-            progressBar.setValue(progressValue);
-            progressBar.setString(String.format("%d%% ($%.2f / $%.2f)", progressValue, totalExpenses, budget));
-
-            if (progressValue >= 90) {
-                progressBar.setForeground(new Color(183, 28, 28));
-            } else if (progressValue >= 80) {
-                progressBar.setForeground(new Color(230, 81, 0));
-            } else if (progressValue >= 60) {
-                progressBar.setForeground(new Color(255, 152, 0));
-            } else {
-                progressBar.setForeground(new Color(67, 160, 71));
-            }
-
-            // Show warning at 80%
-            if (progressValue >= 80 && progressValue < 90) {
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(frame,
-                        String.format("Warning: Budget for %s has reached %d%%\nExpenses: $%.2f\nBudget: $%.2f",
-                            category, progressValue, totalExpenses, budget),
-                        "Budget Alert",
-                        JOptionPane.WARNING_MESSAGE);
-                });
-            }
-        }
-    }
-
-    private void updateAllProgressBars() {
-        if (budgetManagerPanel != null) {
-            budgetManagerPanel.updateAllProgressBars();
-        }
-    }
-    
-    private JPanel createBudgetProgressPanel() {
-        JPanel budgetPanel = new JPanel(new GridLayout(0, 4, 10, 10));
-        budgetPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Budget Progress"),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        ));
-
-        for (String category : ExpenseManager.predefinedCategories) {
-            JPanel categoryPanel = new JPanel(new BorderLayout(3, 3));
-            categoryPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-            
-            JLabel label = new JLabel(category);
-            label.setFont(new Font("Times New Roman", Font.BOLD, 24));
-            
-            JPanel inputPanel = new JPanel(new BorderLayout(5, 0));
-            JTextField budgetField = new JTextField(8);
-            JButton setButton = createStyledButton("Set");
-            
-            inputPanel.add(budgetField, BorderLayout.CENTER);
-            inputPanel.add(setButton, BorderLayout.EAST);
-            
-            JProgressBar progressBar = new JProgressBar(0, 100);
-            progressBar.setStringPainted(true);
-            progressBar.setPreferredSize(new Dimension(progressBar.getPreferredSize().width, 20));
-            progressBars.put(category, progressBar);
-
-            setButton.addActionListener(e -> {
-                try {
-                    double amount = Double.parseDouble(budgetField.getText());
-                    if (amount < 0) {
-                        throw new IllegalArgumentException("Budget cannot be negative");
-                    }
-                    expenseManager.getBudgetManager().setBudget(category, amount);
-                    budgetField.setText("");
-                    JOptionPane.showMessageDialog(frame, 
-                        String.format("Budget set for %s: $%.2f", category, amount),
-                        "Budget Updated",
-                        JOptionPane.INFORMATION_MESSAGE);
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(frame,
-                        "Please enter a valid number",
-                        "Invalid Input",
-                        JOptionPane.ERROR_MESSAGE);
-                } catch (IllegalArgumentException ex) {
-                    JOptionPane.showMessageDialog(frame,
-                        ex.getMessage(),
-                        "Invalid Input",
-                        JOptionPane.ERROR_MESSAGE);
-                }
-            });
-
-            categoryPanel.add(label, BorderLayout.NORTH);
-            categoryPanel.add(inputPanel, BorderLayout.CENTER);
-            categoryPanel.add(progressBar, BorderLayout.SOUTH);
-            
-            budgetPanel.add(categoryPanel);
-        }
-
-        return budgetPanel;
-    }
-    
-    private JButton createStyledButton(String text) {
-        JButton button = new JButton(text);
-        button.setFont(new Font("Arial", Font.BOLD, 12));
-        button.setFocusPainted(false); 
-        button.setBackground(Color.LIGHT_GRAY); 
-        button.setForeground(Color.BLUE); 
-        button.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); 
-
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                button.setBackground(new Color(48, 63, 159));
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                button.setBackground(new Color(63, 81, 181)); 
-            }
-        });
-
-        return button; 
-
-
-}
 }
