@@ -155,4 +155,34 @@ public class DataPersistenceManager {
             throw new RuntimeException("Error deleting user data: " + e.getMessage(), e);
         }
     }
+    
+    public void deleteUserPassword(User user) {
+
+        String usersFilePath = Paths.get(DATA_DIR, "users.txt").toString();
+        System.out.println("Attempting to delete user data at: " + usersFilePath);
+
+        try {
+            File usersFile = new File(usersFilePath);
+            if (usersFile.exists()) {
+
+                List<String> lines = Files.readAllLines(usersFile.toPath());
+                
+                // Filter out the line matching the username:password hash
+                String userLineToRemove = user.getUsername() + ":" + user.getPasswordHash() + ":" + user.getSalt();
+                List<String> updatedLines = lines.stream()
+                                                 .filter(line -> !line.trim().equals(userLineToRemove))
+                                                 .toList();
+
+                // Write the updated lines back to the users file
+                Files.write(usersFile.toPath(), updatedLines, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+                System.out.println("User entry removed from users file.");
+            } else {
+                System.out.println("Users file not found. Skipping removal of user entry.");
+            }
+        } catch (IOException e) {
+            System.err.println("Error deleting user data: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error deleting user data: " + e.getMessage(), e);
+        }
+    }
 }
