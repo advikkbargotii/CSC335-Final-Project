@@ -1,6 +1,9 @@
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ExpenseManager {
@@ -99,7 +102,30 @@ public class ExpenseManager {
 
     // Update budgets when expenses are added, edited, or removed
     private void updateBudgets() {
-        budgetManager.getAllBudgets(); 
+        YearMonth currentMonth = YearMonth.now();
+        budgetManager.getAllBudgets(currentMonth);
+    }
+    
+    public List<Expense> getExpensesForMonth(YearMonth yearMonth) {
+        return expenses.stream()
+            .filter(expense -> YearMonth.from(expense.getDate()).equals(yearMonth))
+            .collect(Collectors.toList());
+    }
+
+    public double calculateMonthlyExpensesByCategory(String category, YearMonth yearMonth) {
+        return getExpensesForMonth(yearMonth).stream()
+            .filter(expense -> expense.getCategory().equals(category))
+            .mapToDouble(Expense::getAmount)
+            .sum();
+    }
+
+    public Map<String, Double> getMonthlyTotalsByCategory(YearMonth yearMonth) {
+        Map<String, Double> monthlyTotals = new HashMap<>();
+        for (String category : predefinedCategories) {
+            double total = calculateMonthlyExpensesByCategory(category, yearMonth);
+            monthlyTotals.put(category, total);
+        }
+        return monthlyTotals;
     }
     
 }
