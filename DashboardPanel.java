@@ -3,6 +3,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import javax.swing.border.EmptyBorder;
 import java.text.NumberFormat;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
 
@@ -151,10 +152,12 @@ public class DashboardPanel extends JPanel {
     }
 
     public void updateFinancialSummary() {
-        double totalBudget = expenseManager.getBudgetManager().getAllBudgets().values().stream()
+        YearMonth currentMonth = YearMonth.now();
+        double totalBudget = expenseManager.getBudgetManager().getAllBudgets(currentMonth).values().stream()
                 .mapToDouble(Double::doubleValue)
                 .sum();
         double totalExpenses = expenseManager.getAllExpenses().stream()
+                .filter(expense -> YearMonth.from(expense.getDate()).equals(currentMonth))
                 .mapToDouble(Expense::getAmount)
                 .sum();
         double remainingBudget = totalBudget - totalExpenses;
