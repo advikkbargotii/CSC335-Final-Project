@@ -1,14 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 
 public class FinanceApp {
     private User currentUser;
@@ -149,16 +144,12 @@ public class FinanceApp {
         JMenuItem backupItem = new JMenuItem("Create Backup");
         backupItem.addActionListener(e -> createDataBackup());
         
-        JMenuItem settingsItem = new JMenuItem("User Settings");
-        settingsItem.addActionListener(e -> openSettings());
-        
         JMenuItem logoutItem = new JMenuItem("Logout");
         logoutItem.addActionListener(e -> logout());
         
         fileMenu.add(saveItem);
         fileMenu.add(backupItem);
         fileMenu.addSeparator();
-        fileMenu.add(settingsItem);
         fileMenu.add(logoutItem);
     }
 
@@ -265,89 +256,5 @@ public class FinanceApp {
                 "Logout Error",
                 JOptionPane.ERROR_MESSAGE);
         }
-    }
-    
-    private void openSettings() {
-    	
-        SettingsPanel settingsPanel = new SettingsPanel(currentUser, new SettingsPanel.Callback() {
-            public void onSaveChanges(String oldPassword, String newPassword) {
-                try {
-
-                    // Handle password update
-                    if (!newPassword.isEmpty() && !oldPassword.isEmpty()) {
-                    	if (currentUser.checkPassword(oldPassword)) {
-                    		String oldUserName = currentUser.getUsername();
-                        	dataPersistenceManager.deleteUserPassword(currentUser);
-                            currentUser = new User(oldUserName, newPassword);
-                            if (Files.exists(Paths.get("data/users.txt"))) {
-                            	List<String> lines = new ArrayList<>();
-                                lines = Files.readAllLines(Paths.get("data/users.txt"));
-                                lines.add(currentUser.getUsername() + ":" + currentUser.getPasswordHash() + ":" + currentUser.getSalt());
-                                Files.write(Paths.get("data/users.txt"), lines);
-                                System.out.println("Saved user data for: " + currentUser.getUsername());
-                            }
-                    	}
-                    	
-                    	else {
-                            // Wrong old password
-                            JOptionPane.showMessageDialog(null, "The old password is incorrect. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-   
-                    } 
-                    
-                    else {
-                        // Must enter text
-                        JOptionPane.showMessageDialog(null, "Both the old password and new password fields must be filled out.", "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    
-                    // Save the updated user data
-                    saveCurrentData();
-                    JOptionPane.showMessageDialog(frame, "Settings updated successfully.");
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(frame, 
-                        "Error updating settings: " + e.getMessage(), 
-                        "Update Error", 
-                        JOptionPane.ERROR_MESSAGE);
-                }
-                switchToMainPanel();
-            }
-            
-
-            @Override
-            public void onCancel() {
-                switchToMainPanel();
-            }
-
-            @Override
-            public void onDeleteAccount() {
-            	dataPersistenceManager.deleteUserPassword(currentUser);
-            	dataPersistenceManager.deleteUserData(currentUser);
-            	logout();
-            }
-
-
-        });
-
-        // Switch the main frame content to the settings panel
-        frame.getContentPane().removeAll();
-        frame.getContentPane().add(settingsPanel);
-        frame.revalidate();
-        frame.repaint();
-    }
-
-    private void switchToMainPanel() {
-        // Clear the current content
-        frame.getContentPane().removeAll();
-
-        // Recreate and add the main content
-        tabbedPane = new JTabbedPane();
-        initializePanels();
-        frame.getContentPane().add(tabbedPane);
-
-        // Refresh the UI
-        frame.revalidate();
-        frame.repaint();
     }
 }
