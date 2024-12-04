@@ -1,158 +1,181 @@
-import java.io.*;
-import java.nio.file.*;
-import java.time.LocalDate;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import javax.swing.border.EmptyBorder;
+import java.text.NumberFormat;
 import java.time.YearMonth;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
 
-public class DataPersistenceManager {
-    private static final String DATA_DIR = "data";
-    
-    private static String getUserDataFileName(String username) {
-        return username + "_data.txt";
+public class DashboardPanel extends JPanel {
+    private ExpenseManager expenseManager;
+    private User currentUser;
+    private JLabel totalBudgetLabel;
+    private JLabel totalExpensesLabel;
+    private JLabel remainingBudgetLabel;
+    private JTabbedPane parentTabbedPane;
+
+    public DashboardPanel(ExpenseManager expenseManager, User currentUser, JTabbedPane parentTabbedPane) {
+        this.expenseManager = expenseManager;
+        this.currentUser = currentUser;
+        this.parentTabbedPane = parentTabbedPane;
+        
+        setLayout(new BorderLayout(10, 10));
+        setBorder(new EmptyBorder(15, 15, 15, 15));
+        
+        createHeaderPanel();
+        createMainContent();
+        
+        updateFinancialSummary();
     }
 
-    public DataPersistenceManager() {
-        initializeDataDirectory();
+    private void createHeaderPanel() {
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(new BorderLayout());
+        headerPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY),
+            new EmptyBorder(0, 0, 10, 0)
+        ));
+
+        JLabel welcomeLabel = new JLabel("Welcome, " + currentUser.getUsername());
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        headerPanel.add(welcomeLabel, BorderLayout.WEST);
+
+        JPanel summaryPanel = new JPanel(new GridLayout(1, 3, 20, 0));
+        summaryPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        totalBudgetLabel = createSummaryCard("Total Budget", "0.00");
+        totalExpensesLabel = createSummaryCard("Total Expenses", "0.00");
+        remainingBudgetLabel = createSummaryCard("Remaining Budget", "0.00");
+
+        summaryPanel.add(totalBudgetLabel);
+        summaryPanel.add(totalExpensesLabel);
+        summaryPanel.add(remainingBudgetLabel);
+
+        headerPanel.add(summaryPanel, BorderLayout.CENTER);
+        add(headerPanel, BorderLayout.NORTH);
     }
 
-    private void initializeDataDirectory() {
-        try {
-            Path dirPath = Paths.get(DATA_DIR);
-            if (!Files.exists(dirPath)) {
-                Files.createDirectories(dirPath);
-                System.out.println("Created data directory at: " + dirPath.toAbsolutePath());
-            } else {
-                System.out.println("Data directory exists at: " + dirPath.toAbsolutePath());
+    private JLabel createSummaryCard(String title, String initialValue) {
+        JLabel label = new JLabel(String.format("<html><div style='text-align: center;'>" +
+            "<span style='font-size: 14px; color: #666;'>%s</span><br>" +
+            "<span style='font-size: 20px; color: #000;'>$%s</span></div></html>", 
+            title, initialValue));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+            new EmptyBorder(20, 30, 20, 30)
+        ));
+        label.setOpaque(true);
+        label.setBackground(Color.WHITE);
+        return label;
+    }
+
+    private void createMainContent() {
+        JPanel overviewPanel = new JPanel(new BorderLayout(10, 10));
+        overviewPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        // Quick actions panel with styled buttons
+        JPanel quickActionsPanel = new JPanel(new GridLayout(1, 3, 10, 0));
+        quickActionsPanel.setBorder(new EmptyBorder(10, 0, 10, 0));
+
+        // Create styled quick action buttons
+        JButton expenseButton = createStyledButton("Manage Expenses", new Color(63, 81, 181));
+        JButton budgetButton = createStyledButton("Set Budget", new Color(76, 175, 80));
+        JButton reportButton = createStyledButton("View Reports", new Color(255, 152, 0));
+
+        // Add action listeners to switch tabs
+        expenseButton.addActionListener(e -> parentTabbedPane.setSelectedIndex(1)); // Expenses tab
+        budgetButton.addActionListener(e -> parentTabbedPane.setSelectedIndex(2));  // Budget tab
+        reportButton.addActionListener(e -> parentTabbedPane.setSelectedIndex(3));  // Reports tab
+
+        quickActionsPanel.add(expenseButton);
+        quickActionsPanel.add(budgetButton);
+        quickActionsPanel.add(reportButton);
+
+        // Recent transactions panel
+        JPanel recentTransactionsPanel = new JPanel(new BorderLayout());
+        recentTransactionsPanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            ),
+            "Recent Transactions"
+        ));
+        
+        String[] columnNames = {"Date", "Category", "Amount", "Description"};
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        JTable recentTransactionsTable = new JTable(tableModel);
+        
+        // Add the 5 most recent transactions
+        List<Expense> allExpenses = expenseManager.getAllExpenses();
+        int startIndex = Math.max(0, allExpenses.size() - 5);
+        for (int i = startIndex; i < allExpenses.size(); i++) {
+            Expense expense = allExpenses.get(i);
+            tableModel.addRow(new Object[]{
+                expense.getDate(),
+                expense.getCategory(),
+                String.format("$%.2f", expense.getAmount()),
+                expense.getDescription()
+            });
+        }
+
+        JScrollPane scrollPane = new JScrollPane(recentTransactionsTable);
+        recentTransactionsPanel.add(scrollPane);
+
+        overviewPanel.add(quickActionsPanel, BorderLayout.NORTH);
+        overviewPanel.add(recentTransactionsPanel, BorderLayout.CENTER);
+
+        add(overviewPanel, BorderLayout.CENTER);
+    }
+
+    private JButton createStyledButton(String text, Color baseColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setBackground(baseColor);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(baseColor.darker());
             }
-        } catch (IOException e) {
-            System.err.println("Error creating data directory: " + e.getMessage());
-            throw new RuntimeException("Could not create data directory", e);
-        }
-    }
-
-    public void saveUserData(User user, ExpenseManager expenseManager) {
-    	   String userDataPath = DATA_DIR + "/" + getUserDataFileName(user.getUsername());
-
-    	   try (BufferedWriter writer = new BufferedWriter(new FileWriter(userDataPath))) {
-    	       // Write budget data
-    	       writer.write("[BUDGETS]\n");
-    	       ArrayList<YearMonth> months = expenseManager.getBudgetManager().getAvailableMonths();
-
-    	       for (YearMonth month : months) {
-    	           Map<String, Double> budgets = expenseManager.getBudgetManager().getAllBudgets(month);
-    	           for (Map.Entry<String, Double> entry : budgets.entrySet()) {
-    	               String line = month.toString() + "," + entry.getKey() + "," + 
-    	                   String.format("%.2f", entry.getValue()) + "\n";
-    	               writer.write(line);
-    	           }
-    	       }
-
-    	       // Write expenses data 
-    	       writer.write("[EXPENSES]\n");
-    	       List<Expense> expenses = expenseManager.getAllExpenses();
-    	       
-    	       for (Expense expense : expenses) {
-    	           String line = expense.getDate() + "," +
-    	               expense.getCategory() + "," +
-    	               String.format("%.2f", expense.getAmount()) + "," +
-    	               expense.getDescription().replace(",", ";") + "\n";
-    	           writer.write(line);
-    	       }
-
-    	   } catch (IOException e) {
-    	       throw new RuntimeException("Error saving user data: " + e.getMessage());
-    	   }
-    	}
-
-    public void loadUserData(User user, ExpenseManager expenseManager) {
-        String userDataPath = Paths.get(DATA_DIR, getUserDataFileName(user.getUsername())).toString();
-        System.out.println("Attempting to load data for user: " + user.getUsername());
-        System.out.println("Loading from path: " + userDataPath);
-        
-        if (!Files.exists(Paths.get(userDataPath))) {
-            System.out.println("No existing data file found for user");
-            return;
-        }
-        
-        try (BufferedReader reader = new BufferedReader(new FileReader(userDataPath))) {
-            String line;
-            String section = "";
-            int budgetCount = 0;
-            int expenseCount = 0;
-            
-            while ((line = reader.readLine()) != null) {
-                if (line.equals("[BUDGETS]")) {
-                    section = "BUDGETS";
-                    System.out.println("Reading budgets section");
-                    continue;
-                } else if (line.equals("[EXPENSES]")) {
-                    section = "EXPENSES";
-                    System.out.println("Reading expenses section");
-                    continue;
-                }
-                
-                if (section.equals("BUDGETS")) {
-                    String[] parts = line.split(",");
-                    if (parts.length == 3) {
-                        YearMonth month = YearMonth.parse(parts[0]);
-                        String category = parts[1];
-                        double amount = Double.parseDouble(parts[2]);
-                        expenseManager.getBudgetManager().setBudget(category, amount, month);
-                        budgetCount++;
-                        System.out.println("Loaded budget: " + category + " = " + amount + " for " + month);
-                    }
-                } else if (section.equals("EXPENSES")) {
-                    String[] parts = line.split(",", 4);
-                    if (parts.length == 4) {
-                        Expense expense = new Expense(
-                            LocalDate.parse(parts[0]),
-                            parts[1],
-                            Double.parseDouble(parts[2]),
-                            parts[3].replace(";", ",")
-                        );
-                        expenseManager.addExpense(expense);
-                        expenseCount++;
-                        System.out.println("Loaded expense: " + expense);
-                    }
-                }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(baseColor);
             }
-            
-            System.out.println("Data load completed successfully");
-            System.out.println("Loaded " + budgetCount + " budgets and " + expenseCount + " expenses");
-            
-        } catch (IOException e) {
-            System.err.println("Error loading user data: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error loading user data: " + e.getMessage(), e);
-        }
+        });
+        
+        return button;
     }
 
-    public void backupUserData(User user) {
-        String userDataPath = Paths.get(DATA_DIR, getUserDataFileName(user.getUsername())).toString();
-        String backupPath = userDataPath + ".backup";
-        System.out.println("Creating backup from " + userDataPath + " to " + backupPath);
-        
-        try {
-            Files.copy(Paths.get(userDataPath), Paths.get(backupPath), StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("Backup created successfully");
-        } catch (IOException e) {
-            System.err.println("Error creating backup: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error creating backup: " + e.getMessage(), e);
-        }
+    public void updateFinancialSummary() {
+        YearMonth currentMonth = YearMonth.now();
+        double totalBudget = expenseManager.getBudgetManager().getAllBudgets(currentMonth).values().stream()
+                .mapToDouble(Double::doubleValue)
+                .sum();
+        double totalExpenses = expenseManager.getAllExpenses().stream()
+                .filter(expense -> YearMonth.from(expense.getDate()).equals(currentMonth))
+                .mapToDouble(Expense::getAmount)
+                .sum();
+        double remainingBudget = totalBudget - totalExpenses;
+
+        NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US);
+
+        totalBudgetLabel.setText(createSummaryHTML("Total Budget", currencyFormatter.format(totalBudget)));
+        totalExpensesLabel.setText(createSummaryHTML("Total Expenses", currencyFormatter.format(totalExpenses)));
+        remainingBudgetLabel.setText(createSummaryHTML("Remaining Budget", currencyFormatter.format(remainingBudget)));
+
+        revalidate();
+        repaint();
     }
 
-    public void deleteUserData(User user) {
-        String userDataPath = Paths.get(DATA_DIR, getUserDataFileName(user.getUsername())).toString();
-        System.out.println("Attempting to delete user data at: " + userDataPath);
-        
-        try {
-            boolean deleted = Files.deleteIfExists(Paths.get(userDataPath));
-            System.out.println("Delete operation result: " + (deleted ? "File deleted" : "File not found"));
-        } catch (IOException e) {
-            System.err.println("Error deleting user data: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error deleting user data: " + e.getMessage(), e);
-        }
+    private String createSummaryHTML(String title, String value) {
+        return String.format("<html><div style='text-align: center;'>" +
+            "<span style='font-size: 14px; color: #666;'>%s</span><br>" +
+            "<span style='font-size: 20px; color: #000;'>%s</span></div></html>", 
+            title, value);
     }
 }
