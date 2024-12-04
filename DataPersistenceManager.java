@@ -1,6 +1,7 @@
 import java.io.*;
 import java.nio.file.*;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.*;
 
 public class DataPersistenceManager {
@@ -30,42 +31,38 @@ public class DataPersistenceManager {
     }
 
     public void saveUserData(User user, ExpenseManager expenseManager) {
-        String userDataPath = Paths.get(DATA_DIR, getUserDataFileName(user.getUsername())).toString();
-        System.out.println("Attempting to save data for user: " + user.getUsername());
-        System.out.println("Saving to path: " + userDataPath);
-        
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(userDataPath))) {
-            // Write budget data
-            writer.write("[BUDGETS]\n");
-            Map<String, Double> budgets = expenseManager.getBudgetManager().getAllBudgets();
-            System.out.println("Saving budgets: " + budgets.size() + " entries");
-            for (Map.Entry<String, Double> entry : budgets.entrySet()) {
-                String line = String.format("%s,%.2f\n", entry.getKey(), entry.getValue());
-                writer.write(line);
-                System.out.println("Wrote budget: " + line.trim());
-            }
-            
-            // Write expenses data
-            writer.write("[EXPENSES]\n");
-            List<Expense> expenses = expenseManager.getAllExpenses();
-            System.out.println("Saving expenses: " + expenses.size() + " entries");
-            for (Expense expense : expenses) {
-                String line = String.format("%s,%s,%.2f,%s\n",
-                    expense.getDate(),
-                    expense.getCategory(),
-                    expense.getAmount(),
-                    expense.getDescription().replace(",", ";"));
-                writer.write(line);
-                System.out.println("Wrote expense: " + line.trim());
-            }
-            System.out.println("Data save completed successfully");
-            
-        } catch (IOException e) {
-            System.err.println("Error saving user data: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error saving user data: " + e.getMessage(), e);
-        }
-    }
+    	   String userDataPath = DATA_DIR + "/" + getUserDataFileName(user.getUsername());
+
+    	   try (BufferedWriter writer = new BufferedWriter(new FileWriter(userDataPath))) {
+    	       // Write budget data
+    	       writer.write("[BUDGETS]\n");
+    	       ArrayList<YearMonth> months = expenseManager.getBudgetManager().getAvailableMonths();
+
+    	       for (YearMonth month : months) {
+    	           Map<String, Double> budgets = expenseManager.getBudgetManager().getAllBudgets(month);
+    	           for (Map.Entry<String, Double> entry : budgets.entrySet()) {
+    	               String line = month.toString() + "," + entry.getKey() + "," + 
+    	                   String.format("%.2f", entry.getValue()) + "\n";
+    	               writer.write(line);
+    	           }
+    	       }
+
+    	       // Write expenses data 
+    	       writer.write("[EXPENSES]\n");
+    	       List<Expense> expenses = expenseManager.getAllExpenses();
+    	       
+    	       for (Expense expense : expenses) {
+    	           String line = expense.getDate() + "," +
+    	               expense.getCategory() + "," +
+    	               String.format("%.2f", expense.getAmount()) + "," +
+    	               expense.getDescription().replace(",", ";") + "\n";
+    	           writer.write(line);
+    	       }
+
+    	   } catch (IOException e) {
+    	       throw new RuntimeException("Error saving user data: " + e.getMessage());
+    	   }
+    	}
 
     public void loadUserData(User user, ExpenseManager expenseManager) {
         String userDataPath = Paths.get(DATA_DIR, getUserDataFileName(user.getUsername())).toString();
@@ -96,12 +93,13 @@ public class DataPersistenceManager {
                 
                 if (section.equals("BUDGETS")) {
                     String[] parts = line.split(",");
-                    if (parts.length == 2) {
-                        String category = parts[0];
-                        double amount = Double.parseDouble(parts[1]);
-                        expenseManager.getBudgetManager().setBudget(category, amount);
+                    if (parts.length == 3) {
+                        YearMonth month = YearMonth.parse(parts[0]);
+                        String category = parts[1];
+                        double amount = Double.parseDouble(parts[2]);
+                        expenseManager.getBudgetManager().setBudget(category, amount, month);
                         budgetCount++;
-                        System.out.println("Loaded budget: " + category + " = " + amount);
+                        System.out.println("Loaded budget: " + category + " = " + amount + " for " + month);
                     }
                 } else if (section.equals("EXPENSES")) {
                     String[] parts = line.split(",", 4);
