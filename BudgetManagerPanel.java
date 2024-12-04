@@ -1,21 +1,25 @@
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class BudgetManagerPanel extends JPanel {
     private BudgetManager budgetManager;
     private Map<String, JProgressBar> progressBars;
     private Map<String, JTextField> budgetFields;
     private Map<String, Boolean> warningShown;
+    private JComboBox<String> monthSelector;
+    private YearMonth selectedMonth;
+    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMMM yyyy");
 
     public BudgetManagerPanel(BudgetManager budgetManager) {
         this.budgetManager = budgetManager;
         this.progressBars = new HashMap<>();
         this.budgetFields = new HashMap<>();
         this.warningShown = new HashMap<>();
+        this.selectedMonth = YearMonth.now();
         
-        // Initialize warning flags for all categories
         for (String category : ExpenseManager.predefinedCategories) {
             warningShown.put(category, false);
         }
@@ -23,8 +27,53 @@ public class BudgetManagerPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
+        createMonthSelector();
         initializeBudgetPanel();
     }
+
+    private void createMonthSelector() {
+        JPanel selectorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        
+        monthSelector = new JComboBox<>();
+        updateMonthSelector();
+        
+        monthSelector.addActionListener(e -> {
+            String selected = (String) monthSelector.getSelectedItem();
+            if (selected != null) {
+                selectedMonth = YearMonth.parse(selected, MONTH_FORMATTER);
+                updateAllProgressBars();
+            }
+        });
+
+        JButton refreshButton = createStyledButton("Refresh Months");
+        refreshButton.addActionListener(e -> updateMonthSelector());
+
+        selectorPanel.add(new JLabel("Select Month: "));
+        selectorPanel.add(monthSelector);
+        selectorPanel.add(refreshButton);
+
+        add(selectorPanel, BorderLayout.NORTH);
+    }
+
+    private void updateMonthSelector() {
+    	   String currentSelection = monthSelector.getSelectedItem() != null ? 
+    	       monthSelector.getSelectedItem().toString() : null;
+    	       
+    	   monthSelector.removeAllItems();
+    	   
+    	   ArrayList<YearMonth> months = budgetManager.getAvailableMonths();
+    	   Collections.sort(months);
+    	   
+    	   for (YearMonth month : months) {
+    	       monthSelector.addItem(month.format(MONTH_FORMATTER));
+    	   }
+    	   
+    	   if (currentSelection != null) {
+    	       monthSelector.setSelectedItem(currentSelection);
+    	   } else {
+    	       monthSelector.setSelectedItem(selectedMonth.format(MONTH_FORMATTER));
+    	   }
+    	}
 
     private void initializeBudgetPanel() {
         JPanel mainPanel = new JPanel(new GridLayout(0, 1, 0, 20));
@@ -40,7 +89,6 @@ public class BudgetManagerPanel extends JPanel {
             mainPanel.add(createCategoryPanel(category));
         }
 
-        // Add mainPanel to a ScrollPane
         JScrollPane scrollPane = new JScrollPane(mainPanel);
         scrollPane.setBorder(null);
         add(scrollPane, BorderLayout.CENTER);
@@ -53,11 +101,9 @@ public class BudgetManagerPanel extends JPanel {
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
-        // Category label
         JLabel categoryLabel = new JLabel(category);
         categoryLabel.setFont(new Font("Arial", Font.BOLD, 16));
         
-        // Input panel (budget field and set button)
         JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         
         JLabel dollarSign = new JLabel("$");
@@ -73,18 +119,15 @@ public class BudgetManagerPanel extends JPanel {
         inputPanel.add(budgetField);
         inputPanel.add(setButton);
 
-        // Progress bar
         JProgressBar progressBar = new JProgressBar(0, 100);
         progressBar.setStringPainted(true);
         progressBar.setPreferredSize(new Dimension(progressBar.getPreferredSize().width, 25));
         progressBar.setFont(new Font("Arial", Font.PLAIN, 12));
         progressBars.put(category, progressBar);
 
-        // Progress info panel
         JPanel progressInfoPanel = new JPanel(new BorderLayout(5, 0));
         progressInfoPanel.add(progressBar, BorderLayout.CENTER);
 
-        // Add components to category panel
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(categoryLabel, BorderLayout.WEST);
         topPanel.add(inputPanel, BorderLayout.EAST);
@@ -92,7 +135,6 @@ public class BudgetManagerPanel extends JPanel {
         categoryPanel.add(topPanel, BorderLayout.NORTH);
         categoryPanel.add(progressInfoPanel, BorderLayout.CENTER);
 
-        // Set button action
         setButton.addActionListener(e -> {
             try {
                 String input = budgetField.getText().trim();
@@ -105,12 +147,13 @@ public class BudgetManagerPanel extends JPanel {
                     throw new IllegalArgumentException("Budget cannot be negative");
                 }
                 
-                budgetManager.setBudget(category, amount);
+                budgetManager.setBudget(category, amount, selectedMonth);
                 updateProgressBar(category);
                 budgetField.setText("");
                 
                 JOptionPane.showMessageDialog(this,
-                    String.format("Budget for %s set to $%.2f", category, amount),
+                    String.format("Budget for %s set to $%.2f for %s", 
+                        category, amount, selectedMonth.format(MONTH_FORMATTER)),
                     "Budget Updated",
                     JOptionPane.INFORMATION_MESSAGE);
                     
@@ -127,9 +170,7 @@ public class BudgetManagerPanel extends JPanel {
             }
         });
 
-        // Initialize progress bar
         updateProgressBar(category);
-
         return categoryPanel;
     }
 
@@ -156,8 +197,8 @@ public class BudgetManagerPanel extends JPanel {
     }
 
     public void updateProgressBar(String category) {
-        double totalExpenses = budgetManager.calculateTotalExpensesByCategory(category);
-        double budget = budgetManager.getBudget(category);
+        double totalExpenses = budgetManager.calculateTotalExpensesByCategory(category, selectedMonth);
+        double budget = budgetManager.getBudget(category, selectedMonth);
         
         JProgressBar progressBar = progressBars.get(category);
         if (progressBar != null) {
@@ -165,27 +206,25 @@ public class BudgetManagerPanel extends JPanel {
                 progressBar.setValue(0);
                 progressBar.setString("No budget set");
                 progressBar.setForeground(Color.GRAY);
-                warningShown.put(category, false); // Reset warning flag when budget is 0
+                warningShown.put(category, false);
             } else {
                 int percentage = (int) ((totalExpenses / budget) * 100);
-                percentage = Math.min(percentage, 100); // Cap at 100%
+                percentage = Math.min(percentage, 100);
                 
                 progressBar.setValue(percentage);
                 progressBar.setString(String.format("%d%% ($%.2f / $%.2f)", 
                     percentage, totalExpenses, budget));
 
-                // Color coding based on usage
                 if (percentage >= 90) {
-                    progressBar.setForeground(new Color(183, 28, 28)); // Dark Red
+                    progressBar.setForeground(new Color(183, 28, 28));
                 } else if (percentage >= 75) {
-                    progressBar.setForeground(new Color(230, 81, 0)); // Dark Orange
+                    progressBar.setForeground(new Color(230, 81, 0));
                 } else if (percentage >= 50) {
-                    progressBar.setForeground(new Color(255, 152, 0)); // Orange
+                    progressBar.setForeground(new Color(255, 152, 0));
                 } else {
-                    progressBar.setForeground(new Color(67, 160, 71)); // Green
+                    progressBar.setForeground(new Color(67, 160, 71));
                 }
 
-                // Check for threshold and show warning if needed
                 checkAndShowWarning(category, percentage, totalExpenses, budget);
             }
         }
@@ -207,7 +246,6 @@ public class BudgetManagerPanel extends JPanel {
                 warningShown.put(category, true);
             });
         } else if (percentage < 80) {
-            // Reset warning flag when utilization drops below threshold
             warningShown.put(category, false);
         }
     }
