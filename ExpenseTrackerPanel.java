@@ -14,23 +14,28 @@ public class ExpenseTrackerPanel extends JPanel {
     public ExpenseTrackerPanel(ExpenseManager expenseManager) {
         this.expenseManager = expenseManager;
         setLayout(new BorderLayout());
-        setLayout(new BorderLayout());
 
         // Table for displaying expenses
-        tableModel = new DefaultTableModel(new String[]{"Date", "Category", "Amount", "Description"}, 0);
+        tableModel = new DefaultTableModel(new String[]{"Date", "Category", "Amount", "Description"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Make table read-only
+            }
+        };
         expenseTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(expenseTable);
         
-        // Expense input form (previous implementation remains the same)
-        JPanel formPanel = new JPanel(new GridLayout(6, 2));
+        // Expense input form
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JTextField dateField = new JTextField();
         JComboBox<String> categoryBox = new JComboBox<>(expenseManager.getPredefinedCategories().toArray(new String[0]));
         JTextField amountField = new JTextField();
         JTextField descriptionField = new JTextField();
 
-        JButton addButton = new JButton("Add Expense");
-        JButton deleteButton = new JButton("Delete Selected Expense");
+        JButton addButton = createStyledButton("Add Expense", new Color(76, 175, 80));
+        JButton deleteButton = createStyledButton("Delete Selected", new Color(211, 47, 47));
 
         formPanel.add(new JLabel("Date (YYYY-MM-DD):"));
         formPanel.add(dateField);
@@ -45,8 +50,9 @@ public class ExpenseTrackerPanel extends JPanel {
         formPanel.add(new JLabel());
         formPanel.add(deleteButton);
 
-        // Filter panel with GridBagLayout
+        // Filter panel
         JPanel filterPanel = new JPanel(new GridBagLayout());
+        filterPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
 
@@ -55,11 +61,14 @@ public class ExpenseTrackerPanel extends JPanel {
         JList<String> categoryList = new JList<>(expenseManager.getPredefinedCategories().toArray(new String[0]));
         categoryList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         JScrollPane categoryScrollPane = new JScrollPane(categoryList);
-        JButton filterButton = new JButton("Filter");
-        JButton resetButton = new JButton("Reset");
+        categoryScrollPane.setPreferredSize(new Dimension(200, 100));
 
-        gbc.gridx = 0;
-        gbc.gridy = 0;
+        JButton filterButton = createStyledButton("Filter", new Color(63, 81, 181));
+        JButton resetButton = createStyledButton("Reset", new Color(158, 158, 158));
+        JButton refreshButton = createStyledButton("Refresh", new Color(0, 150, 136));
+
+        // Add components to filter panel
+        gbc.gridx = 0; gbc.gridy = 0;
         filterPanel.add(new JLabel("Start Date (YYYY-MM-DD):"), gbc);
 
         gbc.gridx = 1;
@@ -71,8 +80,10 @@ public class ExpenseTrackerPanel extends JPanel {
         gbc.gridx = 3;
         filterPanel.add(endDateField, gbc);
 
-        gbc.gridx = 0;
-        gbc.gridy = 1;
+        gbc.gridx = 4;
+        filterPanel.add(refreshButton, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
         gbc.gridwidth = 4;
         filterPanel.add(new JLabel("Categories:"), gbc);
 
@@ -91,7 +102,7 @@ public class ExpenseTrackerPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
         add(formPanel, BorderLayout.SOUTH);
 
-        // Action listener for adding expenses
+        // Action Listeners
         addButton.addActionListener(e -> {
             try {
                 LocalDate date = LocalDate.parse(dateField.getText());
@@ -99,87 +110,114 @@ public class ExpenseTrackerPanel extends JPanel {
                 double amount = Double.parseDouble(amountField.getText());
                 String description = descriptionField.getText();
 
+                if (amount <= 0) {
+                    throw new IllegalArgumentException("Amount must be positive");
+                }
+
                 Expense expense = new Expense(date, category, amount, description);
                 expenseManager.addExpense(expense);
 
-                // Update table
-                tableModel.addRow(new Object[]{date, category, amount, description});
-
-                // Automatically update progress bar for the specific category
-                if (budgetManagerPanel != null) {
-                    budgetManagerPanel.updateProgressBar(category);
-                }
+                refreshExpenseTable(); // Refresh the table after adding
 
                 // Clear input fields
                 dateField.setText("");
                 categoryBox.setSelectedIndex(0);
                 amountField.setText("");
                 descriptionField.setText("");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Invalid amount format", "Error", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Invalid input. Please check your data.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Invalid input: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Action listener for deleting expenses
         deleteButton.addActionListener(e -> {
             int selectedRow = expenseTable.getSelectedRow();
             if (selectedRow != -1) {
-                // Remove from the expense manager
                 expenseManager.deleteExpense(selectedRow);
-
-                // Remove from the table
-                tableModel.removeRow(selectedRow);
+                refreshExpenseTable(); // Refresh the table after deleting
             } else {
-                JOptionPane.showMessageDialog(this, "No expense selected.", "Error", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Please select an expense to delete", "Error", JOptionPane.WARNING_MESSAGE);
             }
         });
 
-        // Action listener for filtering expenses
         filterButton.addActionListener(e -> {
             try {
-                LocalDate startDate = startDateField.getText().isEmpty() ? null : LocalDate.parse(startDateField.getText());
-                LocalDate endDate = endDateField.getText().isEmpty() ? null : LocalDate.parse(endDateField.getText());
+                LocalDate startDate = startDateField.getText().isEmpty() ? 
+                    null : LocalDate.parse(startDateField.getText());
+                LocalDate endDate = endDateField.getText().isEmpty() ? 
+                    null : LocalDate.parse(endDateField.getText());
                 List<String> selectedCategories = categoryList.getSelectedValuesList();
 
                 List<Expense> filteredExpenses = expenseManager.getAllExpenses();
 
-                // Filter by date range
                 if (startDate != null && endDate != null) {
                     filteredExpenses = expenseManager.filterByDateRange(startDate, endDate);
                 }
 
-                // Further filter by categories
                 if (!selectedCategories.isEmpty()) {
                     filteredExpenses = filteredExpenses.stream()
                             .filter(expense -> selectedCategories.contains(expense.getCategory()))
                             .collect(Collectors.toList());
                 }
 
-                // Update table
-                tableModel.setRowCount(0); // Clear table
-                for (Expense expense : filteredExpenses) {
-                    tableModel.addRow(new Object[]{
-                            expense.getDate(), expense.getCategory(), expense.getAmount(), expense.getDescription()
-                    });
-                }
+                updateTableWithExpenses(filteredExpenses);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Invalid filter inputs. Please check your data.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                    "Invalid filter inputs: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Action listener for resetting filters
         resetButton.addActionListener(e -> {
             startDateField.setText("");
             endDateField.setText("");
             categoryList.clearSelection();
+            refreshExpenseTable();
+        });
 
-            // Reload all expenses
-            tableModel.setRowCount(0);
-            for (Expense expense : expenseManager.getAllExpenses()) {
-                tableModel.addRow(new Object[]{
-                        expense.getDate(), expense.getCategory(), expense.getAmount(), expense.getDescription()
-                });
+        refreshButton.addActionListener(e -> refreshExpenseTable());
+
+        // Load initial data
+        refreshExpenseTable();
+    }
+
+    private void refreshExpenseTable() {
+        updateTableWithExpenses(expenseManager.getAllExpenses());
+    }
+
+    private void updateTableWithExpenses(List<Expense> expenses) {
+        tableModel.setRowCount(0); // Clear existing rows
+        for (Expense expense : expenses) {
+            tableModel.addRow(new Object[]{
+                expense.getDate(),
+                expense.getCategory(),
+                String.format("$%.2f", expense.getAmount()),
+                expense.getDescription()
+            });
+        }
+    }
+
+    private JButton createStyledButton(String text, Color baseColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+        button.setForeground(Color.WHITE);
+        button.setBackground(baseColor);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(baseColor.darker());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(baseColor);
             }
         });
+        
+        return button;
     }
 }
