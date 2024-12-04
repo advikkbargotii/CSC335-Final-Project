@@ -75,6 +75,10 @@ public class TransactionFileHandler {
             errorLines.forEach(error -> summary.append(error).append("\n"));
         }
         
+        if (expenseManager.getGuiUpdateCallback() != null) {
+            expenseManager.getGuiUpdateCallback().run();
+        }
+        
         throw new TransactionImportException(summary.toString(), successfulImports > 0);
     }
     
