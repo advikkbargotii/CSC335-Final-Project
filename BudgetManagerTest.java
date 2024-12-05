@@ -105,4 +105,46 @@ class BudgetManagerTest {
         assertEquals(100.0, budgetManager.calculateTotalExpensesByCategory("Food", currentMonth));
         assertEquals(200.0, budgetManager.calculateTotalExpensesByCategory("Food", nextMonth));
     }
+    
+    @Test
+    void testBudgetUpdate() {
+        budgetManager.setBudget("Food", 200.0, currentMonth);
+        budgetManager.setBudget("Food", 300.0, currentMonth);
+        assertEquals(300.0, budgetManager.getBudget("Food", currentMonth));
+    }
+
+    @Test
+    void testMultipleCallbackExecutions() {
+        int[] callbackCount = {0};
+        budgetManager.setUpdateCallback(() -> callbackCount[0]++);
+        budgetManager.setBudget("Food", 200.0, currentMonth);
+        budgetManager.setBudget("Transportation", 300.0, currentMonth);
+        assertEquals(2, callbackCount[0]);
+    }
+
+    @Test
+    void testGetBudgetAfterCategoryDeletion() {
+        budgetManager.setBudget("Food", 200.0, currentMonth);
+        budgetManager.setBudget("Food", 0.0, currentMonth);
+        assertEquals(0.0, budgetManager.getBudget("Food", currentMonth));
+    }
+
+
+    @Test
+    void testUtilizationWithNoExpenses() {
+        budgetManager.setBudget("Utilities", 500.0, currentMonth);
+        assertEquals(0.0, budgetManager.calculateBudgetUtilization(currentMonth).get("Utilities"));
+    }
+
+    @Test
+    void testGetAllBudgetsWithNoBudgetsSet() {
+        assertTrue(budgetManager.getAllBudgets(currentMonth.plusMonths(2)).isEmpty());
+    }
+
+    @Test
+    void testAvailableMonthsFromExpensesOnly() {
+        expenseManager.addExpense(new Expense(LocalDate.now().minusMonths(1), "Food", 100.0, "Previous month"));
+        assertTrue(budgetManager.getAvailableMonths().contains(currentMonth.minusMonths(1)));
+    }
+
 }
