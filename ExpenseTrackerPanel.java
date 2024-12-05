@@ -5,12 +5,23 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ExpenseTrackerPanel extends JPanel {
-    private ExpenseManager expenseManager;
-    private DefaultTableModel tableModel;
-    private JTable expenseTable;
-    private BudgetManagerPanel budgetManagerPanel;
+/**
+Description: The ExpenseTrackerPanel class represents the GUI panel for managing expenses.
+			It includes components for viewing, adding, deleting, and filtering expenses,
+			as well as integrating with the ExpenseManager and BudgetManager.
+*/
 
+public class ExpenseTrackerPanel extends JPanel {
+    private ExpenseManager expenseManager; // Manages expense data
+    private DefaultTableModel tableModel; // Model for the expense table
+    private JTable expenseTable; // Table for displaying expenses
+    private BudgetManagerPanel budgetManagerPanel; // Panel for budget management 
+
+    /**
+    Constructs an ExpenseTrackerPanel with the specified ExpenseManager.
+    Initializes and lays out the GUI components for managing expenses.
+    @param expenseManager The ExpenseManager to manage and track expenses.
+    */
     public ExpenseTrackerPanel(ExpenseManager expenseManager) {
         this.expenseManager = expenseManager;
         setLayout(new BorderLayout());
@@ -19,13 +30,13 @@ public class ExpenseTrackerPanel extends JPanel {
         tableModel = new DefaultTableModel(new String[]{"Date", "Category", "Amount", "Description"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Make table read-only
+                return false; 
             }
         };
         expenseTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(expenseTable);
         
-        // Expense input form
+        // Form for adding expenses
         JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -50,7 +61,7 @@ public class ExpenseTrackerPanel extends JPanel {
         formPanel.add(new JLabel());
         formPanel.add(deleteButton);
 
-        // Filter panel
+        // Filter panel for filtering expenses
         JPanel filterPanel = new JPanel(new GridBagLayout());
         filterPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         GridBagConstraints gbc = new GridBagConstraints();
@@ -67,7 +78,7 @@ public class ExpenseTrackerPanel extends JPanel {
         JButton resetButton = createStyledButton("Reset", new Color(158, 158, 158));
         JButton refreshButton = createStyledButton("Refresh", new Color(0, 150, 136));
 
-        // Add components to filter panel
+        // Layout setup for filter panel
         gbc.gridx = 0; gbc.gridy = 0;
         filterPanel.add(new JLabel("Start Date (YYYY-MM-DD):"), gbc);
 
@@ -97,12 +108,11 @@ public class ExpenseTrackerPanel extends JPanel {
         gbc.gridx = 2;
         filterPanel.add(resetButton, gbc);
 
-        // Layout setup
+        
         add(filterPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(formPanel, BorderLayout.SOUTH);
 
-        // Action Listeners
         addButton.addActionListener(e -> {
             try {
                 LocalDate date = LocalDate.parse(dateField.getText());
@@ -117,7 +127,7 @@ public class ExpenseTrackerPanel extends JPanel {
                 Expense expense = new Expense(date, category, amount, description);
                 expenseManager.addExpense(expense);
 
-                refreshExpenseTable(); // Refresh the table after adding
+                refreshExpenseTable(); // Refresh's the table after adding
 
                 // Clear input fields
                 dateField.setText("");
@@ -180,14 +190,20 @@ public class ExpenseTrackerPanel extends JPanel {
 
         refreshButton.addActionListener(e -> refreshExpenseTable());
 
-        // Load initial data
         refreshExpenseTable();
     }
 
+    /**
+    Refreshes the expense table with all expenses.
+    */
     private void refreshExpenseTable() {
         updateTableWithExpenses(expenseManager.getAllExpenses());
     }
 
+    /**
+    Updates the table model with the given list of expenses.
+    @param expenses The list of expenses to display in the table.
+    */
     private void updateTableWithExpenses(List<Expense> expenses) {
         tableModel.setRowCount(0); // Clear existing rows
         for (Expense expense : expenses) {
@@ -200,6 +216,12 @@ public class ExpenseTrackerPanel extends JPanel {
         }
     }
 
+    /**
+    Creates a styled JButton with the specified text and color.
+    @param text The text of the button.
+    @param baseColor The base color of the button.
+    @return The styled JButton.
+    */
     private JButton createStyledButton(String text, Color baseColor) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 12));
