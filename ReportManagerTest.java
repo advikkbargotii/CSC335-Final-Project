@@ -16,11 +16,10 @@ public class ReportManagerTest {
     @BeforeEach
     void setUp() {
       
-        mockBudgetManager = new BudgetManager();
-        mockExpenseManager = new ExpenseManager(mockBudgetManager);
+        mockExpenseManager = new ExpenseManager();
+        mockBudgetManager = new BudgetManager(mockExpenseManager);
         reportManager = new ReportManager(mockExpenseManager);
 
-        mockExpenseManager.setPredefinedCategories(Arrays.asList("Food", "Transportation", "Entertainment", "Utilities", "Miscellaneous"));
 
         mockExpenseManager.addExpense(new Expense(LocalDate.of(2024, 1, 5), "Food", 50.00, "Groceries"));
         mockExpenseManager.addExpense(new Expense(LocalDate.of(2024, 1, 10), "Transportation", 30.00, "Bus fare"));
