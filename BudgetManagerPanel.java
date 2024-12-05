@@ -4,6 +4,10 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * Provides a GUI panel for managing budgets per category for each month.
+ * This panel allows users to view, set, and update budgets with visual feedback.
+ */
 public class BudgetManagerPanel extends JPanel {
     private BudgetManager budgetManager;
     private Map<String, JProgressBar> progressBars;
@@ -13,6 +17,10 @@ public class BudgetManagerPanel extends JPanel {
     private YearMonth selectedMonth;
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMMM yyyy");
 
+    /**
+     * Constructs a panel for budget management interfacing with a BudgetManager.
+     * @param budgetManager The BudgetManager to interact with for budget data.
+     */
     public BudgetManagerPanel(BudgetManager budgetManager) {
         this.budgetManager = budgetManager;
         this.progressBars = new HashMap<>();
@@ -31,6 +39,9 @@ public class BudgetManagerPanel extends JPanel {
         initializeBudgetPanel();
     }
 
+    /**
+     * Creates a selector for choosing the month for budget operations.
+     */
     private void createMonthSelector() {
         JPanel selectorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         
@@ -55,26 +66,32 @@ public class BudgetManagerPanel extends JPanel {
         add(selectorPanel, BorderLayout.NORTH);
     }
 
+    /**
+     * Updates the month selector combo box with available months from the BudgetManager.
+     */
     private void updateMonthSelector() {
-    	   String currentSelection = monthSelector.getSelectedItem() != null ? 
-    	       monthSelector.getSelectedItem().toString() : null;
-    	       
-    	   monthSelector.removeAllItems();
-    	   
-    	   ArrayList<YearMonth> months = budgetManager.getAvailableMonths();
-    	   Collections.sort(months);
-    	   
-    	   for (YearMonth month : months) {
-    	       monthSelector.addItem(month.format(MONTH_FORMATTER));
-    	   }
-    	   
-    	   if (currentSelection != null) {
-    	       monthSelector.setSelectedItem(currentSelection);
-    	   } else {
-    	       monthSelector.setSelectedItem(selectedMonth.format(MONTH_FORMATTER));
-    	   }
-    	}
+        String currentSelection = monthSelector.getSelectedItem() != null ? 
+            monthSelector.getSelectedItem().toString() : null;
+           
+        monthSelector.removeAllItems();
+        
+        ArrayList<YearMonth> months = budgetManager.getAvailableMonths();
+        Collections.sort(months);
+        
+        for (YearMonth month : months) {
+            monthSelector.addItem(month.format(MONTH_FORMATTER));
+        }
+        
+        if (currentSelection != null) {
+            monthSelector.setSelectedItem(currentSelection);
+        } else {
+            monthSelector.setSelectedItem(selectedMonth.format(MONTH_FORMATTER));
+        }
+    }
 
+    /**
+     * Initializes the panel for budget management.
+     */
     private void initializeBudgetPanel() {
         JPanel mainPanel = new JPanel(new GridLayout(0, 1, 0, 20));
         mainPanel.setBorder(BorderFactory.createTitledBorder(
@@ -94,6 +111,11 @@ public class BudgetManagerPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Creates a panel for managing budget of a specific category.
+     * @param category The category for which to manage the budget.
+     * @return The panel for managing budget for the category.
+     */
     private JPanel createCategoryPanel(String category) {
         JPanel categoryPanel = new JPanel(new BorderLayout(10, 5));
         categoryPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -174,6 +196,11 @@ public class BudgetManagerPanel extends JPanel {
         return categoryPanel;
     }
 
+    /**
+     * Creates a styled button with specific font and color settings.
+     * @param text The text to display on the button.
+     * @return The styled button.
+     */
     private JButton createStyledButton(String text) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 12));
@@ -196,6 +223,10 @@ public class BudgetManagerPanel extends JPanel {
         return button;
     }
 
+    /**
+     * Updates the progress bar for a specific category based on total expenses and budget.
+     * @param category The category for which the progress bar should be updated.
+     */
     public void updateProgressBar(String category) {
         double totalExpenses = budgetManager.calculateTotalExpensesByCategory(category, selectedMonth);
         double budget = budgetManager.getBudget(category, selectedMonth);
@@ -230,6 +261,13 @@ public class BudgetManagerPanel extends JPanel {
         }
     }
 
+    /**
+     * Checks if a warning should be shown for budget over-utilization and displays it if necessary.
+     * @param category The budget category.
+     * @param percentage The utilization percentage.
+     * @param totalExpenses Total expenses incurred for the category.
+     * @param budget The set budget for the category.
+     */
     private void checkAndShowWarning(String category, int percentage, double totalExpenses, double budget) {
         if (percentage >= 80 && !warningShown.get(category)) {
             SwingUtilities.invokeLater(() -> {
@@ -250,12 +288,18 @@ public class BudgetManagerPanel extends JPanel {
         }
     }
 
+    /**
+     * Updates all progress bars based on the current budget and expenses.
+     */
     public void updateAllProgressBars() {
         for (String category : ExpenseManager.predefinedCategories) {
             updateProgressBar(category);
         }
     }
 
+    /**
+     * Resets the warning flags for all categories.
+     */
     public void resetWarningFlags() {
         for (String category : ExpenseManager.predefinedCategories) {
             warningShown.put(category, false);
