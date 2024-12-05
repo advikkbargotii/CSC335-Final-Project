@@ -4,13 +4,29 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Handles the importing and exporting of transaction files for an ExpenseManager.
+ * This class allows transactions to be loaded from and saved to files, managing data integrity and formatting.
+ */
 public class TransactionFileHandler {
     private ExpenseManager expenseManager;
     
+    /**
+     * Constructs a TransactionFileHandler with a reference to an ExpenseManager to manage expenses.
+     * @param expenseManager The ExpenseManager that will handle the expenses extracted or saved.
+     */
     public TransactionFileHandler(ExpenseManager expenseManager) {
         this.expenseManager = expenseManager;
     }
     
+    /**
+     * Imports transactions from a specified file into the ExpenseManager.
+     * This method reads a file line by line, parsing and validating each transaction before adding it to the manager.
+     * 
+     * @param file The file from which transactions are to be imported.
+     * @throws IOException If an I/O error occurs reading from the file.
+     * @throws TransactionImportException If any error occurs during the import process, including data validation errors.
+     */
     public void importTransactions(File file) throws IOException, TransactionImportException {
         List<String> errorLines = new ArrayList<>();
         int lineNumber = 0;
@@ -29,17 +45,13 @@ public class TransactionFileHandler {
                         continue;
                     }
                     
-                    // Parse date
                     LocalDate date = LocalDate.parse(parts[0].trim());
-                    
-                    // Validate category
                     String category = parts[1].trim();
                     if (!ExpenseManager.predefinedCategories.contains(category)) {
                         errorLines.add("Line " + lineNumber + ": Invalid category - " + category);
                         continue;
                     }
                     
-                    // Parse amount
                     double amount;
                     try {
                         amount = Double.parseDouble(parts[2].trim());
@@ -52,8 +64,6 @@ public class TransactionFileHandler {
                     }
                     
                     String description = parts[3].trim();
-                    
-                    // Create and add expense
                     Expense expense = new Expense(date, category, amount, description);
                     expenseManager.addExpense(expense);
                     successfulImports++;
@@ -66,10 +76,8 @@ public class TransactionFileHandler {
             }
         }
         
-        // Generate import summary
         StringBuilder summary = new StringBuilder();
         summary.append(String.format("Successfully imported %d transactions\n", successfulImports));
-        
         if (!errorLines.isEmpty()) {
             summary.append("\nErrors encountered:\n");
             errorLines.forEach(error -> summary.append(error).append("\n"));
@@ -82,6 +90,13 @@ public class TransactionFileHandler {
         throw new TransactionImportException(summary.toString(), successfulImports > 0);
     }
     
+    /**
+     * Exports all transactions managed by the ExpenseManager to a specified file.
+     * Each transaction is written in a CSV format with the date, category, amount, and description.
+     * 
+     * @param file The file to which transactions are to be exported.
+     * @throws IOException If an I/O error occurs writing to the file.
+     */
     public void exportTransactions(File file) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             for (Expense expense : expenseManager.getAllExpenses()) {
@@ -89,21 +104,34 @@ public class TransactionFileHandler {
                     expense.getDate(),
                     expense.getCategory(),
                     expense.getAmount(),
-                    expense.getDescription().replace(",", ";")  // Replace commas in description
+                    expense.getDescription().replace(",", ";")  // Handle commas in descriptions
                 );
                 writer.write(line);
             }
         }
     }
     
+    /**
+     * Exception class for handling errors during the transaction import process.
+     * This class encapsulates information about partial successes where some transactions might still be processed correctly.
+     */
     public static class TransactionImportException extends Exception {
         private final boolean partialSuccess;
         
+        /**
+         * Constructs a TransactionImportException with a message and a success flag.
+         * @param message Detailed message about the errors encountered during import.
+         * @param partialSuccess True if some transactions were successfully imported despite errors.
+         */
         public TransactionImportException(String message, boolean partialSuccess) {
             super(message);
             this.partialSuccess = partialSuccess;
         }
         
+        /**
+         * Indicates whether any transactions were successfully imported.
+         * @return True if some transactions were successfully imported, false otherwise.
+         */
         public boolean isPartialSuccess() {
             return partialSuccess;
         }
