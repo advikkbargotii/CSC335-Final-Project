@@ -1,3 +1,8 @@
+/**
+  Description: The DataPersistenceManager class handles file-based data persistence for user and expense data.
+  				It provides methods to save, load, back up, and delete user-related data.
+*/
+
 import java.io.*;
 import java.nio.file.*;
 import java.time.LocalDate;
@@ -5,16 +10,27 @@ import java.time.YearMonth;
 import java.util.*;
 
 public class DataPersistenceManager {
-    private static final String DATA_DIR = "data";
+    private static final String DATA_DIR = "data"; // Directory where data files are stored
     
+    /**
+    Helper method to get the file name for a user's data.
+    @param username The username of the user.
+    @return The file name for the user's data.
+    */
     private static String getUserDataFileName(String username) {
         return username + "_data.txt";
     }
 
+    /**
+    Constructs a DataPersistenceManager and ensures the data directory exists.
+    */
     public DataPersistenceManager() {
         initializeDataDirectory();
     }
-
+ 
+    /**
+    Ensures the data directory exists. Creates it if not found.
+    */
     private void initializeDataDirectory() {
         try {
             Path dirPath = Paths.get(DATA_DIR);
@@ -30,11 +46,15 @@ public class DataPersistenceManager {
         }
     }
 
+    /**
+    Saves user and expense data to a file in the data directory.
+    @param user The user whose data is being saved.
+    @param expenseManager The manager handling user's expense data.
+    */
     public void saveUserData(User user, ExpenseManager expenseManager) {
     	   String userDataPath = DATA_DIR + "/" + getUserDataFileName(user.getUsername());
 
     	   try (BufferedWriter writer = new BufferedWriter(new FileWriter(userDataPath))) {
-    	       // Write budget data
     	       writer.write("[BUDGETS]\n");
     	       ArrayList<YearMonth> months = expenseManager.getBudgetManager().getAvailableMonths();
 
@@ -47,7 +67,6 @@ public class DataPersistenceManager {
     	           }
     	       }
 
-    	       // Write expenses data 
     	       writer.write("[EXPENSES]\n");
     	       List<Expense> expenses = expenseManager.getAllExpenses();
     	       
@@ -64,6 +83,11 @@ public class DataPersistenceManager {
     	   }
     	}
 
+    /**
+    Loads user and expense data from a file in the data directory.
+    @param user The user whose data is being loaded.
+    @param expenseManager The manager handling user's expense data.
+    */
     public void loadUserData(User user, ExpenseManager expenseManager) {
         String userDataPath = Paths.get(DATA_DIR, getUserDataFileName(user.getUsername())).toString();
         System.out.println("Attempting to load data for user: " + user.getUsername());
@@ -127,6 +151,10 @@ public class DataPersistenceManager {
         }
     }
 
+    /**
+    Creates a backup of the user's data file.
+    @param user The user whose data is being backed up.
+    */
     public void backupUserData(User user) {
         String userDataPath = Paths.get(DATA_DIR, getUserDataFileName(user.getUsername())).toString();
         String backupPath = userDataPath + ".backup";
@@ -142,6 +170,10 @@ public class DataPersistenceManager {
         }
     }
 
+    /**
+    Deletes the user's data file from the data directory.
+    @param user The user whose data is being deleted.
+    */
     public void deleteUserData(User user) {
         String userDataPath = Paths.get(DATA_DIR, getUserDataFileName(user.getUsername())).toString();
         System.out.println("Attempting to delete user data at: " + userDataPath);
@@ -156,6 +188,10 @@ public class DataPersistenceManager {
         }
     }
     
+    /**
+    Deletes a user's password entry from the users file.
+    @param user The user whose password entry is being deleted.
+    */
     public void deleteUserPassword(User user) {
 
         String usersFilePath = Paths.get(DATA_DIR, "users.txt").toString();
@@ -167,13 +203,13 @@ public class DataPersistenceManager {
 
                 List<String> lines = Files.readAllLines(usersFile.toPath());
                 
-                // Filter out the line matching the username:password hash
+                // Filters out the line matching the username:password hash
                 String userLineToRemove = user.getUsername() + ":" + user.getPasswordHash() + ":" + user.getSalt();
                 List<String> updatedLines = lines.stream()
                                                  .filter(line -> !line.trim().equals(userLineToRemove))
                                                  .toList();
 
-                // Write the updated lines back to the users file
+                // Write's the updated lines back to the users file
                 Files.write(usersFile.toPath(), updatedLines, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
                 System.out.println("User entry removed from users file.");
             } else {
