@@ -9,10 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-/**
- * The main class for the Finance Application, managing the user interface and interactions
- * with the ExpenseManager and DataPersistenceManager for data operations.
- */
+
 public class FinanceApp {
     private User currentUser;
     private ExpenseManager expenseManager;
@@ -24,10 +21,6 @@ public class FinanceApp {
     private BudgetManagerPanel budgetManagerPanel;
     private ReportManagerPanel reportManagerPanel;
 
-    /**
-     * Constructs a FinanceApp instance associated with a specific user.
-     * @param user The user for whom the finance application is initialized.
-     */
     public FinanceApp(User user) {
         this.currentUser = user;
         this.expenseManager = new ExpenseManager();
@@ -36,20 +29,20 @@ public class FinanceApp {
         initializeApplication();
     }
 
-    /**
-     * Initializes the application by setting up the main frame, loading user data,
-     * and establishing necessary background operations like auto-save.
-     */
     private void initializeApplication() {
+        // Load saved data
         loadUserData();
+        
+        // Create the main application frame and components
         createFinanceAppFrame();
+        
+        // Set up auto-save functionality
         setupAutoSave();
+        
+        // Set up GUI update callback
         setupUpdateCallback();
     }
 
-    /**
-     * Loads user data from a persistent storage managed by DataPersistenceManager.
-     */
     private void loadUserData() {
         try {
             dataPersistenceManager.loadUserData(currentUser, expenseManager);
@@ -64,9 +57,6 @@ public class FinanceApp {
         }
     }
 
-    /**
-     * Sets up the auto-save functionality using a shutdown hook to save data when the application closes.
-     */
     private void setupAutoSave() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
@@ -79,9 +69,6 @@ public class FinanceApp {
         }));
     }
 
-    /**
-     * Sets up a callback for GUI updates when the expense data changes.
-     */
     private void setupUpdateCallback() {
         expenseManager.setGuiUpdateCallback(() -> {
             SwingUtilities.invokeLater(() -> {
@@ -91,80 +78,83 @@ public class FinanceApp {
         });
     }
 
-    /**
-     * Creates the main application frame and configures basic window settings.
-     */
     private void createFinanceAppFrame() {
         frame = new JFrame("Personal Finance Assistant - " + currentUser.getUsername());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1200, 800);
         frame.setMinimumSize(new Dimension(1000, 600));
 
+        // Initialize tabbedPane
         tabbedPane = new JTabbedPane();
+        
+        // Create and initialize all panels
         initializePanels();
+        
+        // Add menu bar
         frame.setJMenuBar(createMenuBar());
+        
+        // Add tabbed pane to frame
         frame.add(tabbedPane);
+        
+        // Center frame on screen and display
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    /**
-     * Initializes panels for each major functionality in the app such as dashboard, expense tracking, etc.
-     */
     private void initializePanels() {
+        // Create all panels
         dashboardPanel = new DashboardPanel(expenseManager, currentUser, tabbedPane);
         expenseTrackerPanel = new ExpenseTrackerPanel(expenseManager);
         budgetManagerPanel = new BudgetManagerPanel(expenseManager.getBudgetManager());
         reportManagerPanel = new ReportManagerPanel(new ReportManager(expenseManager));
 
+        // Add panels to tabbed pane with icons
         tabbedPane.addTab("Dashboard", loadIcon("dashboard.png"), dashboardPanel, "View your financial overview");
         tabbedPane.addTab("Expenses", loadIcon("expense.png"), expenseTrackerPanel, "Manage your expenses");
         tabbedPane.addTab("Budget", loadIcon("budget.jpeg"), budgetManagerPanel, "Manage your budgets");
         tabbedPane.addTab("Reports", loadIcon("report.png"), reportManagerPanel, "View financial reports");
     }
 
-    /**
-     * Loads an icon for a given filename.
-     * @param filename The file name of the icon.
-     * @return ImageIcon if successful, or an empty icon if the file is not found.
-     */
     private ImageIcon loadIcon(String filename) {
         try {
-            return new ImageIcon(filename);
+            ImageIcon icon = new ImageIcon(filename);
+            return icon;
         } catch (Exception e) {
             System.err.println("Could not load icon: " + filename);
-            return new ImageIcon();
+            return new ImageIcon(); // Return empty icon if loading fails
         }
     }
 
-    /**
-     * Creates the menu bar with file and import/export options.
-     * @return JMenuBar The configured menu bar for the application.
-     */
     private JMenuBar createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
+        
+        // File menu
         JMenu fileMenu = new JMenu("File");
         addMenuItems(fileMenu);
+        
+        // Import/Export menu
         JMenu importExportMenu = new JMenu("Import/Export");
         addImportExportItems(importExportMenu);
+        
         menuBar.add(fileMenu);
         menuBar.add(importExportMenu);
+        
         return menuBar;
     }
 
-    /**
-     * Adds menu items to the file menu.
-     * @param fileMenu The file menu to which items are added.
-     */
     private void addMenuItems(JMenu fileMenu) {
         JMenuItem saveItem = new JMenuItem("Save Data");
         saveItem.addActionListener(e -> saveCurrentData());
+        
         JMenuItem backupItem = new JMenuItem("Create Backup");
         backupItem.addActionListener(e -> createDataBackup());
+        
         JMenuItem settingsItem = new JMenuItem("User Settings");
         settingsItem.addActionListener(e -> openSettings());
+        
         JMenuItem logoutItem = new JMenuItem("Logout");
         logoutItem.addActionListener(e -> logout());
+        
         fileMenu.add(saveItem);
         fileMenu.add(backupItem);
         fileMenu.addSeparator();
@@ -172,30 +162,26 @@ public class FinanceApp {
         fileMenu.add(logoutItem);
     }
 
-    /**
-     * Adds import and export options to the specified menu.
-     * @param importExportMenu The menu to which import/export items are added.
-     */
     private void addImportExportItems(JMenu importExportMenu) {
         JMenuItem importItem = new JMenuItem("Import Transactions");
         importItem.addActionListener(e -> importTransactions());
+        
         JMenuItem exportItem = new JMenuItem("Export Transactions");
         exportItem.addActionListener(e -> exportTransactions());
+        
         importExportMenu.add(importItem);
         importExportMenu.add(exportItem);
     }
 
-    /**
-     * Updates all components of the application related to financial data display.
-     */
     private void updateAllComponents() {
-        dashboardPanel.updateFinancialSummary();
-        budgetManagerPanel.updateAllProgressBars();
+        if (dashboardPanel != null) {
+            dashboardPanel.updateFinancialSummary();
+        }
+        if (budgetManagerPanel != null) {
+            budgetManagerPanel.updateAllProgressBars();
+        }
     }
 
-    /**
-     * Saves the current data using the DataPersistenceManager.
-     */
     private void saveCurrentData() {
         try {
             dataPersistenceManager.saveUserData(currentUser, expenseManager);
@@ -204,9 +190,6 @@ public class FinanceApp {
         }
     }
 
-    /**
-     * Creates a backup of the user data.
-     */
     private void createDataBackup() {
         try {
             dataPersistenceManager.backupUserData(currentUser);
@@ -222,12 +205,10 @@ public class FinanceApp {
         }
     }
 
-    /**
-     * Imports transactions from a file selected by the user.
-     */
     private void importTransactions() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Import Transactions");
+        
         if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
             try {
                 TransactionFileHandler fileHandler = new TransactionFileHandler(expenseManager);
@@ -251,13 +232,11 @@ public class FinanceApp {
         }
     }
 
-    /**
-     * Exports transactions to a file chosen by the user.
-     */
     private void exportTransactions() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Export Transactions");
         fileChooser.setSelectedFile(new File("transactions.txt"));
+        
         if (fileChooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
             try {
                 TransactionFileHandler fileHandler = new TransactionFileHandler(expenseManager);
@@ -275,9 +254,6 @@ public class FinanceApp {
         }
     }
 
-    /**
-     * Logs out the current user, saves data, and disposes of the application frame.
-     */
     private void logout() {
         try {
             saveCurrentData();
@@ -291,10 +267,87 @@ public class FinanceApp {
         }
     }
     
-    /**
-     * Opens the user settings interface for managing user preferences and information.
-     */
     private void openSettings() {
-        // Implementation details would be added here for handling user settings.
+        
+        SettingsPanel settingsPanel = new SettingsPanel(currentUser, new SettingsPanel.Callback() {
+            public void onSaveChanges(String oldPassword, String newPassword) {
+                try {
+
+                    // Handle password update
+                    if (!newPassword.isEmpty() && !oldPassword.isEmpty()) {
+                        if (currentUser.checkPassword(oldPassword)) {
+                            String oldUserName = currentUser.getUsername();
+                            dataPersistenceManager.deleteUserPassword(currentUser);
+                            currentUser = new User(oldUserName, newPassword);
+                            if (Files.exists(Paths.get("data/users.txt"))) {
+                                List<String> lines = new ArrayList<>();
+                                lines = Files.readAllLines(Paths.get("data/users.txt"));
+                                lines.add(currentUser.getUsername() + ":" + currentUser.getPasswordHash() + ":" + currentUser.getSalt());
+                                Files.write(Paths.get("data/users.txt"), lines);
+                                System.out.println("Saved user data for: " + currentUser.getUsername());
+                            }
+                        }
+                        
+                        else {
+                            // Wrong old password
+                            JOptionPane.showMessageDialog(null, "The old password is incorrect. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+   
+                    } 
+                    
+                    else {
+                        // Must enter text
+                        JOptionPane.showMessageDialog(null, "Both the old password and new password fields must be filled out.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
+                    // Save the updated user data
+                    saveCurrentData();
+                    JOptionPane.showMessageDialog(frame, "Settings updated successfully.");
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(frame, 
+                        "Error updating settings: " + e.getMessage(), 
+                        "Update Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                }
+                switchToMainPanel();
+            }
+            
+
+            @Override
+            public void onCancel() {
+                switchToMainPanel();
+            }
+
+            @Override
+            public void onDeleteAccount() {
+                dataPersistenceManager.deleteUserPassword(currentUser);
+                dataPersistenceManager.deleteUserData(currentUser);
+                logout();
+            }
+
+
+        });
+
+        // Switch the main frame content to the settings panel
+        frame.getContentPane().removeAll();
+        frame.getContentPane().add(settingsPanel);
+        frame.revalidate();
+        frame.repaint();
+    }
+
+    private void switchToMainPanel() {
+        // Clear the current content
+        frame.getContentPane().removeAll();
+
+        // Recreate and add the main content
+        tabbedPane = new JTabbedPane();
+        initializePanels();
+        frame.getContentPane().add(tabbedPane);
+
+        // Refresh the UI
+        frame.revalidate();
+        frame.repaint();
     }
 }
