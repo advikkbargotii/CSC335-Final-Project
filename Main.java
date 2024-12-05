@@ -1,20 +1,28 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.io.*;
+import java.io.*; 
 import java.nio.file.*;
-import java.security.*;
 import java.util.*;
-import java.util.Base64;
 import java.util.List;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+/**
+ * Main class for the Personal Finance Assistant application.
+ * This class handles the GUI, user registration, and login functionality.
+ */
 public class Main {
+	
+	/** Path to the user data file. */
     private static final String USER_DATA_FILE = "data/users.txt";
     private static ArrayList<User> users = new ArrayList<>();
     private static JFrame mainFrame;
-
+    
+    /**
+     * Main method to load user data and initialize the GUI.
+     *
+     * @param args Command-line arguments (not used).
+     */
     public static void main(String[] args) {
         loadUserData();
         SwingUtilities.invokeLater(() -> {
@@ -23,6 +31,12 @@ public class Main {
         });
     }
 
+    /**
+     * Creates a styled button with specified properties.
+     *
+     * @param text The text to display on the button.
+     * @return A styled JButton instance.
+     */
     private static JButton createStyledButton(String text) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 16));
@@ -45,21 +59,26 @@ public class Main {
         return button;
     }
 
+    /**
+     * Loads user data from the file and populates the user list.
+     */
     private static void loadUserData() {
         try {
             Files.createDirectories(Paths.get("data"));
 
+            // Ensure the user data file exists
             if (!Files.exists(Paths.get(USER_DATA_FILE))) {
                 Files.createFile(Paths.get(USER_DATA_FILE));
             }
 
+           // Parse user data from the file
             List<String> lines = Files.readAllLines(Paths.get(USER_DATA_FILE));
             users.clear();
 
             for (String line : lines) {
                 String[] parts = line.split(":");
                 if (parts.length == 3) { // Ensure username, hash, and salt are present
-                    users.add(new User(parts[0], parts[1], parts[2])); // Pass salt to User constructor
+                    users.add(new User(parts[0], parts[1], parts[2]));
                 }
             }
             System.out.println("Loaded " + users.size() + " users from file");
@@ -70,6 +89,11 @@ public class Main {
     }
 
 
+    /**
+     * Saves user data to the file. Updates existing user data if the username exists.
+     *
+     * @param user The user whose data is to be saved.
+     */
     private static void saveUserData(User user) {
         try {
             Files.createDirectories(Paths.get("data"));
@@ -88,6 +112,7 @@ public class Main {
                 }
             }
 
+            // Add new user if they don't exist
             if (!userExists) {
                 lines.add(user.getUsername() + ":" + user.getPasswordHash() + ":" + user.getSalt());
             }
@@ -102,6 +127,9 @@ public class Main {
     }
 
 
+    /**
+     * Creates and initializes the main application frame.
+     */
     private static void createMainFrame() {
         mainFrame = new JFrame("Personal Finance Assistant");
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -145,6 +173,11 @@ public class Main {
         mainFrame.setVisible(true);
     }
 
+    /**
+     * Displays the registration dialog for creating a new user account.
+     *
+     * @param parentFrame The parent frame for the dialog.
+     */
     private static void showRegistrationDialog(JFrame parentFrame) {
         JDialog registrationDialog = new JDialog(parentFrame, "Register", true);
         registrationDialog.setSize(400, 300);
@@ -237,6 +270,11 @@ public class Main {
         registrationDialog.setVisible(true);
     }
 
+     /**
+     * Displays the login dialog for authenticating a user.
+     *
+     * @param parentFrame The parent frame for the dialog.
+     */
     private static void showLoginDialog(JFrame parentFrame) {
         JDialog loginDialog = new JDialog(parentFrame, "Login", true);
         loginDialog.setLayout(new GridBagLayout());
@@ -314,6 +352,14 @@ public class Main {
         loginDialog.setVisible(true);
     }
 
+    /**
+     * Updates the password strength indicator based on the provided password.
+     * This method sets the text and color of the strengthLabel to indicate the 
+     * strength of the password
+     *
+     * @param strengthLabel The JLabel to update with password strength text and color.
+     * @param password The password to evaluate for strength.
+     */
     private static void updatePasswordStrengthIndicator(JLabel strengthLabel, String password) {
         int strength = calculatePasswordStrength(password);
         String[] strengthTexts = {
@@ -327,6 +373,21 @@ public class Main {
         strengthLabel.setForeground(strengthColors[strength]);
     }
 
+    /**
+     * Calculates the strength of a password based on its length, character types,
+     * and inclusion of special characters.
+     *
+     * Strength Criteria:
+     * - Length of 12 or more: +2 points
+     * - Length of 8–11: +1 point
+     * - Contains uppercase letters: +1 point
+     * - Contains lowercase letters: +1 point
+     * - Contains digits: +1 point
+     * - Contains special characters: +1 point
+     * 
+     * @param password The password to evaluate.
+     * @return An integer representing the strength level, ranging from 0 to 5.
+     */
     private static int calculatePasswordStrength(String password) {
         int strength = 0;
         
@@ -341,14 +402,35 @@ public class Main {
         return Math.min(strength, 5);
     }
 
+    /**
+     * Checks if a password meets the minimum validity criteria.
+     * A valid password must:
+     * - Be at least 8 characters long.
+     * - Contain at least one digit.
+     *
+     * @param password The password to validate.
+     * @return true if the password is valid, false otherwise.
+     */
     private static boolean isPasswordValid(String password) {
         return password.length() >= 8 && password.matches(".*\\d.*");
     }
 
+    /**
+     * Checks if a given username is available.
+     *
+     * @param username The username to check.
+     * @return true if the username is available, false otherwise.
+     */
     private static boolean isUsernameAvailable(String username) {
         return users.stream().noneMatch(user -> user.getUsername().equals(username));
     }
 
+    /**
+     * Finds and returns a user object for the given username.
+     *
+     * @param username The username of the user to find.
+     * @return The User object if found, or null if no user matches the username.
+     */
     private static User findUser(String username) {
         for (User user : users) {
             if (user.getUsername().equals(username)) {
@@ -358,6 +440,13 @@ public class Main {
         return null;
     }
 
+    /**
+     * Authenticates a user by verifying the username and password.
+     *
+     * @param username The username of the user attempting to authenticate.
+     * @param password The password entered by the user.
+     * @return true if authentication is successful, false otherwise.
+     */
     private static boolean authenticateUser(String username, String password) {
         for (User user : users) {
             if (user.getUsername().equals(username)) {
@@ -368,14 +457,9 @@ public class Main {
     }
 
 
-    private static String hashPassword(String password) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] hash = md.digest(password.getBytes());
-        return Base64.getEncoder().encodeToString(hash);
-    }
-
-
-    // If you need to access createMainFrame from outside, rename it to something like:
+    /**
+     * Displays the main window of the Personal Finance Assistant application.
+     */
     public static void showMainWindow() {
         SwingUtilities.invokeLater(() -> {
             mainFrame = new JFrame("Personal Finance Assistant");
