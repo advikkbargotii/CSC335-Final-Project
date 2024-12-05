@@ -17,7 +17,6 @@ public class ReportManagerTest {
     void setUp() {
       
         mockExpenseManager = new ExpenseManager();
-        mockBudgetManager = new BudgetManager(mockExpenseManager);
         reportManager = new ReportManager(mockExpenseManager);
 
 
@@ -26,18 +25,20 @@ public class ReportManagerTest {
         mockExpenseManager.addExpense(new Expense(LocalDate.of(2024, 1, 20), "Food", 20.00, "Dinner"));
         mockExpenseManager.addExpense(new Expense(LocalDate.of(2024, 1, 25), "Utilities", 100, "Electricity Bill"));
 
-        mockBudgetManager.setBudget("Food", 200, YearMonth.of(2024, 1));
-        mockBudgetManager.setBudget("Transportation", 100, YearMonth.of(2024, 1));
-        mockBudgetManager.setBudget("Utilities", 150, YearMonth.of(2024, 1));
+        mockExpenseManager.getBudgetManager().setBudget("Food", 200, YearMonth.of(2024, 1));
+        mockExpenseManager.getBudgetManager().setBudget("Transportation", 100, YearMonth.of(2024, 1));
+        mockExpenseManager.getBudgetManager().setBudget("Utilities", 150, YearMonth.of(2024, 1));
     }
 
     @Test
     void testGenerateMonthlySummaryReport() {
       
         YearMonth month = YearMonth.of(2024, 1);
+        //System.out.println("SHOULD BE 01 " + month.toString());
         String report = reportManager.generateMonthlySummaryReport(month);
 
         assertNotNull(report);
+        System.out.println(report);
         assertTrue(report.contains("Monthly Report for 2024-01"));
         assertTrue(report.contains("Food Budget: 200.0"));
         assertTrue(report.contains("Food Expenses: 70.0"));
