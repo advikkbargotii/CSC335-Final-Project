@@ -5,8 +5,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * Provides a GUI panel for managing budgets per category for each month.
- * This panel allows users to view, set, and update budgets with visual feedback.
+ * Primary Author: Advik Bargoti
+ * Description: Provides a GUI panel for managing budgets per category for each month.
+ *              This panel allows users to view, set, and update budgets with visual feedback.
  */
 public class BudgetManagerPanel extends JPanel {
     private BudgetManager budgetManager;
