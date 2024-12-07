@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Handles the importing and exporting of transaction files for an ExpenseManager.
- * This class allows transactions to be loaded from and saved to files, managing data integrity and formatting.
+ * Primary Author: Advik Bargoti
+ * Description: Handles the importing and exporting of transaction files for an ExpenseManager.
+ *              This class allows transactions to be loaded from and saved to files, 
+ *              managing data integrity and formatting.
  */
 public class TransactionFileHandler {
     private ExpenseManager expenseManager;
