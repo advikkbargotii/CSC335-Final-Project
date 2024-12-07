@@ -1,4 +1,5 @@
 /**
+  Authors: Primary Author(Ashish Dev Choudhary)
   Description: The ExpenseManager class manages a list of expenses, provides filtering and categorization
 			  capabilities, and integrates with the BudgetManager for budget tracking.
 			  It includes methods for adding, editing, deleting, and querying expenses.
