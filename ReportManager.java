@@ -3,6 +3,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * Authors: Primary author(Richard Posthuma)
  * The ReportManager class generates monthly summary reports, calculates total expenses and budgets
  * for a given month, and categorizes spending using the BudgetManager and ExpenseManager classes.
  */
