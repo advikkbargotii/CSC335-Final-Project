@@ -8,6 +8,10 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Swing-based panel for displaying financial reports, including a detailed report,
+ * a pie chart visualization of expenses, and budget summaries.
+ */
 
 public class ReportManagerPanel extends JPanel {
     private ReportManager reportManager;
@@ -19,12 +23,22 @@ public class ReportManagerPanel extends JPanel {
     private YearMonth selectedMonth;
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMMM yyyy");
 
+    
+    /**
+     * Constructs a ReportManagerPanel with a given ReportManager instance.
+     * @param reportManager An instance of ReportManager to generate financial reports.
+     */
+    
     public ReportManagerPanel(ReportManager reportManager) {
         this.reportManager = reportManager;
         this.currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US);
         this.selectedMonth = YearMonth.now();
         initializePanel();
     }
+
+    /**
+     * Initializes the layout and components of the panel.
+     */
 
     private void initializePanel() {
         setLayout(new BorderLayout(20, 20));
@@ -39,6 +53,11 @@ public class ReportManagerPanel extends JPanel {
         refreshReport();
     }
 
+    
+    /**
+     * Creates the top panel containing the title, month selector, and refresh buttons.
+     * @return The top panel.
+     */
     private JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
@@ -83,6 +102,10 @@ public class ReportManagerPanel extends JPanel {
         return topPanel;
     }
 
+    /**
+     * Updates the month selector with available months from the report manager.
+     */
+
     private void updateMonthSelector() {
     	   String currentSelection = monthSelector.getSelectedItem() != null ? 
     	       monthSelector.getSelectedItem().toString() : null;
@@ -102,6 +125,12 @@ public class ReportManagerPanel extends JPanel {
     	       monthSelector.setSelectedItem(selectedMonth.format(MONTH_FORMATTER));
     	   }
     	}
+    
+
+    /**
+     * Creates the main content panel with a split pane for the detailed report and the pie chart.
+     * @return The main content split pane.
+     */
 
     private JSplitPane createMainContentPanel() {
         JPanel leftPanel = new JPanel(new BorderLayout());
@@ -132,6 +161,12 @@ public class ReportManagerPanel extends JPanel {
         return splitPane;
     }
 
+
+    /**
+     * Creates the right panel containing the pie chart and summary details.
+     * @return The right panel.
+     */
+    
     private JPanel createRightPanel() {
         JPanel rightPanel = new JPanel(new BorderLayout(0, 20));
         rightPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -159,6 +194,11 @@ public class ReportManagerPanel extends JPanel {
         return rightPanel;
     }
 
+    /**
+     * Creates the summary panel displaying total budget, total expenses, and remaining budget.
+     * @return The summary panel.
+     */
+
     private JPanel createSummaryPanel() {
         JPanel summaryPanel = new JPanel(new GridLayout(0, 1, 5, 5));
         summaryPanel.setBorder(BorderFactory.createTitledBorder("Summary"));
@@ -174,6 +214,13 @@ public class ReportManagerPanel extends JPanel {
         return summaryPanel;
     }
 
+   /**
+     * Adds a row to the summary panel with a label and a corresponding amount.
+     * @param panel The panel to which the row is added.
+     * @param label The label for the row.
+     * @param amount The amount to display.
+     */
+    
     private void addSummaryRow(JPanel panel, String label, double amount) {
         JPanel row = new JPanel(new BorderLayout(10, 0));
         JLabel labelComponent = new JLabel(label);
@@ -188,6 +235,10 @@ public class ReportManagerPanel extends JPanel {
         row.add(valueComponent, BorderLayout.EAST);
         panel.add(row);
     }
+
+      /**
+     * Refreshes the report, updating the detailed report text area and the pie chart.
+     */
 
     private void refreshReport() {
         StringBuilder formattedReport = new StringBuilder();
@@ -234,6 +285,14 @@ public class ReportManagerPanel extends JPanel {
         repaint();
     }
 
+
+    /**
+     * Creates a styled button with hover effects and consistent styling.
+     * @param text The button text.
+     * @param baseColor The base color of the button.
+     * @return The styled button.
+     */
+
     private JButton createStyledButton(String text, Color baseColor) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 12));
@@ -255,6 +314,11 @@ public class ReportManagerPanel extends JPanel {
         
         return button;
     }
+
+    /**
+     * Draws a pie chart representing category-wise spending for the selected month.
+     * @param g The Graphics context used to draw the pie chart.
+     */
 
     private void drawPieChart(Graphics g) {
         Map<String, Double> spendingData = reportManager.getCategoryWiseSpending(selectedMonth);
@@ -292,7 +356,17 @@ public class ReportManagerPanel extends JPanel {
 
         drawLegend(g, spendingData, categoryColors, x, y, size, totalSpending);
     }
-
+     /**
+     * Draws the legend for the pie chart.
+     * @param g The Graphics context.
+     * @param spendingData The spending data for the legend.
+     * @param categoryColors The color map for categories.
+     * @param chartX X-coordinate of the chart.
+     * @param chartY Y-coordinate of the chart.
+     * @param chartSize The size of the chart.
+     * @param totalSpending The total spending amount.
+     */
+    
     private void drawLegend(Graphics g, Map<String, Double> spendingData, Map<String, Color> categoryColors, 
                           int chartX, int chartY, int chartSize, double totalSpending) {
         int legendX = chartX + chartSize + 20;
@@ -330,6 +404,11 @@ public class ReportManagerPanel extends JPanel {
         updateMonthSelector();
         refreshReport();
     }
+
+    /**
+     * Draws an empty pie chart with a message if no data is available.
+     * @param g The Graphics context.
+     */
 
     private void drawEmptyPieChart(Graphics g) {
         int padding = 40;
