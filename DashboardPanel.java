@@ -6,6 +6,7 @@ import java.text.NumberFormat;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 // Primary Author: Harshit
 /**
@@ -15,9 +16,9 @@ import java.util.Locale;
 public class DashboardPanel extends JPanel {
     private ExpenseManager expenseManager;
     private User currentUser;
-    private JLabel totalBudgetLabel;
-    private JLabel totalExpensesLabel;
-    private JLabel remainingBudgetLabel;
+    private JPanel totalBudgetLabel;
+    private JPanel totalExpensesLabel;
+    private JPanel remainingBudgetLabel;
     private JTabbedPane parentTabbedPane;
 
     /**
@@ -45,53 +46,72 @@ public class DashboardPanel extends JPanel {
      * Creates the header panel containing welcome message and financial summary cards.
      */
     private void createHeaderPanel() {
-        JPanel headerPanel = new JPanel();
-        headerPanel.setLayout(new BorderLayout());
+        // Create the main header panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY),
-            new EmptyBorder(0, 0, 10, 0)
+            new EmptyBorder(10, 0, 10, 0)
         ));
 
+        // Add a welcome label with the username
         JLabel welcomeLabel = new JLabel("Welcome, " + currentUser.getUsername());
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        welcomeLabel.setHorizontalAlignment(SwingConstants.LEFT);
         headerPanel.add(welcomeLabel, BorderLayout.WEST);
 
+        // Create the summary panel for financial information
         JPanel summaryPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         summaryPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        summaryPanel.setBackground(Color.WHITE);
 
-        totalBudgetLabel = createSummaryCard("Total Budget", "0.00");
-        totalExpensesLabel = createSummaryCard("Total Expenses", "0.00");
-        remainingBudgetLabel = createSummaryCard("Remaining Budget", "0.00");
+        // Add the financial summary cards
+        totalBudgetLabel = createSummaryCardPanel("Total Budget", "0.00");
+        totalExpensesLabel = createSummaryCardPanel("Total Expenses", "0.00");
+        remainingBudgetLabel = createSummaryCardPanel("Remaining Budget", "0.00");
 
         summaryPanel.add(totalBudgetLabel);
         summaryPanel.add(totalExpensesLabel);
         summaryPanel.add(remainingBudgetLabel);
 
+        // Add the summary panel to the header panel
         headerPanel.add(summaryPanel, BorderLayout.CENTER);
+
+        // Add the header panel to the main layout
         add(headerPanel, BorderLayout.NORTH);
     }
 
     /**
-     * Creates a styled summary card for displaying financial information.
+     * Creates a financial summary card with the given title and initial value.
      *
-     * @param title The title of the summary card
+     * @param title        The title of the financial summary
      * @param initialValue The initial value to display
-     * @return A styled JLabel containing the summary information
+     * @return A panel containing the styled financial summary
      */
-    private JLabel createSummaryCard(String title, String initialValue) {
-        JLabel label = new JLabel(String.format("<html><div style='text-align: center;'>" +
-            "<span style='font-size: 14px; color: #666;'>%s</span><br>" +
-            "<span style='font-size: 20px; color: #000;'>$%s</span></div></html>", 
-            title, initialValue));
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setBorder(BorderFactory.createCompoundBorder(
+    private JPanel createSummaryCardPanel(String title, String initialValue) {
+        JPanel cardPanel = new JPanel(new BorderLayout());
+        cardPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            new EmptyBorder(20, 30, 20, 30)
+            new EmptyBorder(10, 20, 10, 20)
         ));
-        label.setOpaque(true);
-        label.setBackground(Color.WHITE);
-        return label;
+        cardPanel.setBackground(Color.WHITE);
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        titleLabel.setForeground(new Color(102, 102, 102));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JLabel valueLabel = new JLabel("$" + initialValue);
+        valueLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        valueLabel.setForeground(Color.BLACK);
+        valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        cardPanel.add(titleLabel, BorderLayout.NORTH);
+        cardPanel.add(valueLabel, BorderLayout.CENTER);
+
+        return cardPanel;
     }
+
+
 
     /**
      * Creates the main content area containing quick action buttons and recent transactions.
@@ -187,44 +207,59 @@ public class DashboardPanel extends JPanel {
      * Updates the financial summary display with current budget and expense information.
      * This method should be called whenever the underlying data changes.
      */
+    /**
+     * Updates the financial summary display with current budget and expense information.
+     * This method should be called whenever the underlying data changes.
+     */
     public void updateFinancialSummary() {
         YearMonth currentMonth = YearMonth.now();
-        double totalBudget = expenseManager.getBudgetManager().getAllBudgets(currentMonth).values().stream()
-                .mapToDouble(Double::doubleValue)
-                .sum();
-        double totalExpenses = expenseManager.getAllExpenses().stream()
-                .filter(expense -> YearMonth.from(expense.getDate()).equals(currentMonth))
-                .mapToDouble(Expense::getAmount)
-                .sum();
+
+        // Calculate total budget
+        Map<String, Double> allBudgets = expenseManager.getBudgetManager().getAllBudgets(currentMonth);
+        double totalBudget = 0.0;
+        for (Double budget : allBudgets.values()) {
+            totalBudget += budget;
+        }
+
+        // Calculate total expenses
+        List<Expense> allExpenses = expenseManager.getAllExpenses();
+        double totalExpenses = 0.0;
+        for (Expense expense : allExpenses) {
+            if (YearMonth.from(expense.getDate()).equals(currentMonth)) {
+                totalExpenses += expense.getAmount();
+            }
+        }
+
+        // Calculate remaining budget
         double remainingBudget = totalBudget - totalExpenses;
 
+        // Format values as currency
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US);
 
-        updateSummaryLabel(totalBudgetLabel, "Total Budget", currencyFormatter.format(totalBudget));
-        updateSummaryLabel(totalExpensesLabel, "Total Expenses", currencyFormatter.format(totalExpenses));
-        updateSummaryLabel(remainingBudgetLabel, "Remaining Budget", currencyFormatter.format(remainingBudget));
+        // Update summary panels
+        updateSummaryCardPanel(totalBudgetLabel, "Total Budget", currencyFormatter.format(totalBudget));
+        updateSummaryCardPanel(totalExpensesLabel, "Total Expenses", currencyFormatter.format(totalExpenses));
+        updateSummaryCardPanel(remainingBudgetLabel, "Remaining Budget", currencyFormatter.format(remainingBudget));
 
         revalidate();
         repaint();
     }
 
+
     /**
-     * Updates the content of a summary label with the given title and value.
+     * Updates the content of a summary card panel with the given title and value.
      *
-     * @param label The JLabel to update.
-     * @param title The title for the summary.
-     * @param value The value for the summary.
+     * @param panel The JPanel representing the summary card to update.
+     * @param title The title for the summary card.
+     * @param value The value for the summary card.
      */
-    private void updateSummaryLabel(JLabel label, String title, String value) {
-        label.setText(title + ": " + value);
-        label.setFont(new Font("Arial", Font.BOLD, 22));
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-                new EmptyBorder(10, 10, 10, 10)
-        ));
-        label.setOpaque(true);
-        label.setBackground(Color.WHITE);
+    private void updateSummaryCardPanel(JPanel panel, String title, String value) {
+        JLabel titleLabel = (JLabel) panel.getComponent(0); // Get the title label
+        JLabel valueLabel = (JLabel) panel.getComponent(1); // Get the value label
+
+        titleLabel.setText(title);
+        valueLabel.setText(value);
     }
+
 
 }
