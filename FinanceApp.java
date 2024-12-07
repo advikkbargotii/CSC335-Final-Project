@@ -8,10 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 /**
- * Primary author: Everyone
- * The FinanceApp class represents the main application for managing
- * personal finances, including expenses, budgets, and reports.
- * It provides a GUI and integrates data persistence and user account management.
+ * Primary Author: Everyone
+ * Description: The FinanceApp class represents the main application for managing
+ *              personal finances, including expenses, budgets, and reports.
+ *              It provides a GUI and integrates data persistence and user account management.
  */
 public class FinanceApp {
     private User currentUser;
