@@ -7,6 +7,11 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Locale;
 
+// Primary Author: Harshit
+/**
+ * A panel that displays the main dashboard of the Personal Finance Assistant.
+ * This includes a summary of financial information and quick access buttons to main features.
+ */
 public class DashboardPanel extends JPanel {
     private ExpenseManager expenseManager;
     private User currentUser;
@@ -15,6 +20,13 @@ public class DashboardPanel extends JPanel {
     private JLabel remainingBudgetLabel;
     private JTabbedPane parentTabbedPane;
 
+    /**
+     * Constructs a new DashboardPanel with the specified components.
+     *
+     * @param expenseManager The manager handling expense operations
+     * @param currentUser The currently logged-in user
+     * @param parentTabbedPane The main application's tabbed pane for navigation
+     */
     public DashboardPanel(ExpenseManager expenseManager, User currentUser, JTabbedPane parentTabbedPane) {
         this.expenseManager = expenseManager;
         this.currentUser = currentUser;
@@ -29,6 +41,9 @@ public class DashboardPanel extends JPanel {
         updateFinancialSummary();
     }
 
+    /**
+     * Creates the header panel containing welcome message and financial summary cards.
+     */
     private void createHeaderPanel() {
         JPanel headerPanel = new JPanel();
         headerPanel.setLayout(new BorderLayout());
@@ -56,6 +71,13 @@ public class DashboardPanel extends JPanel {
         add(headerPanel, BorderLayout.NORTH);
     }
 
+    /**
+     * Creates a styled summary card for displaying financial information.
+     *
+     * @param title The title of the summary card
+     * @param initialValue The initial value to display
+     * @return A styled JLabel containing the summary information
+     */
     private JLabel createSummaryCard(String title, String initialValue) {
         JLabel label = new JLabel(String.format("<html><div style='text-align: center;'>" +
             "<span style='font-size: 14px; color: #666;'>%s</span><br>" +
@@ -71,6 +93,9 @@ public class DashboardPanel extends JPanel {
         return label;
     }
 
+    /**
+     * Creates the main content area containing quick action buttons and recent transactions.
+     */
     private void createMainContent() {
         JPanel overviewPanel = new JPanel(new BorderLayout(10, 10));
         overviewPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -129,6 +154,13 @@ public class DashboardPanel extends JPanel {
         add(overviewPanel, BorderLayout.CENTER);
     }
 
+    /**
+     * Creates a styled button with hover effects.
+     *
+     * @param text The button text
+     * @param baseColor The base color of the button
+     * @return A styled JButton instance
+     */
     private JButton createStyledButton(String text, Color baseColor) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 14));
@@ -151,6 +183,10 @@ public class DashboardPanel extends JPanel {
         return button;
     }
 
+    /**
+     * Updates the financial summary display with current budget and expense information.
+     * This method should be called whenever the underlying data changes.
+     */
     public void updateFinancialSummary() {
         YearMonth currentMonth = YearMonth.now();
         double totalBudget = expenseManager.getBudgetManager().getAllBudgets(currentMonth).values().stream()
@@ -164,18 +200,31 @@ public class DashboardPanel extends JPanel {
 
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US);
 
-        totalBudgetLabel.setText(createSummaryHTML("Total Budget", currencyFormatter.format(totalBudget)));
-        totalExpensesLabel.setText(createSummaryHTML("Total Expenses", currencyFormatter.format(totalExpenses)));
-        remainingBudgetLabel.setText(createSummaryHTML("Remaining Budget", currencyFormatter.format(remainingBudget)));
+        updateSummaryLabel(totalBudgetLabel, "Total Budget", currencyFormatter.format(totalBudget));
+        updateSummaryLabel(totalExpensesLabel, "Total Expenses", currencyFormatter.format(totalExpenses));
+        updateSummaryLabel(remainingBudgetLabel, "Remaining Budget", currencyFormatter.format(remainingBudget));
 
         revalidate();
         repaint();
     }
 
-    private String createSummaryHTML(String title, String value) {
-        return String.format("<html><div style='text-align: center;'>" +
-            "<span style='font-size: 14px; color: #666;'>%s</span><br>" +
-            "<span style='font-size: 20px; color: #000;'>%s</span></div></html>", 
-            title, value);
+    /**
+     * Updates the content of a summary label with the given title and value.
+     *
+     * @param label The JLabel to update.
+     * @param title The title for the summary.
+     * @param value The value for the summary.
+     */
+    private void updateSummaryLabel(JLabel label, String title, String value) {
+        label.setText(title + ": " + value);
+        label.setFont(new Font("Arial", Font.BOLD, 22));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+                new EmptyBorder(10, 10, 10, 10)
+        ));
+        label.setOpaque(true);
+        label.setBackground(Color.WHITE);
     }
+
 }
