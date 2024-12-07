@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
+//Author: Ashish Dev Choudhary
+//Description: JUnit Tests for ExpenseManager.java
+
 public class ExpenseManagerTest {
     
     private ExpenseManager expenseManager;
