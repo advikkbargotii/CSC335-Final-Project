@@ -9,7 +9,7 @@ import java.awt.event.MouseEvent;
 
 /**
  * Primary Author: Everyone
- * Creator: Harshit Jain
+ * Set up by: Harshit Jain
  * Description: Main class for the Personal Finance Assistant application.
  *              This class handles the GUI, user registration, and login functionality.
  */
