@@ -5,8 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Manages budgets for different categories across various months. It interacts with an ExpenseManager to track expenses.
+ * Primary Author: Advik Bargoti
+ * Description: Manages budgets for different categories across various months.
+ *              It interacts with an ExpenseManager.java to track expenses.
  */
+
 public class BudgetManager {
     // Encapsulation: Keeping budget data private to control access through public methods
     private Map<String, Map<String, Double>> budgets; // Maps month to a map of categories and their budget amounts
