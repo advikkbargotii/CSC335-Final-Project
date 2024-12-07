@@ -424,7 +424,12 @@ public class Main {
      * @return true if the username is available, false otherwise.
      */
     private static boolean isUsernameAvailable(String username) {
-        return users.stream().noneMatch(user -> user.getUsername().equals(username));
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
