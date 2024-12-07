@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 
 /**
  * Primary Author: Everyone
+ * Set up by: Harshit Jain
  * Description: The FinanceApp class represents the main application for managing
  *              personal finances, including expenses, budgets, and reports.
  *              It provides a GUI and integrates data persistence and user account management.
