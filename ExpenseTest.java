@@ -3,6 +3,9 @@ import org.junit.jupiter.api.BeforeEach;
 import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 
+//Author: Ashish Dev Choudhary
+//Description: JUnit Test Cases for Expense.java class. 
+
 public class ExpenseTest {
     private Expense expense;
     private LocalDate defaultDate;
