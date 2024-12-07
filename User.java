@@ -2,7 +2,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
-
+ 
+// Primary Author: Harshit Jain
 /**
  * The User class represents a user in the system.
  * It manages the user's credentials including their username, hashed password, and unique salt.
