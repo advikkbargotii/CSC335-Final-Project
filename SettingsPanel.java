@@ -1,8 +1,16 @@
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Primary Author: Richard Posthuma
+ * Description: SettingsPanel class provides a user interface for managing user settings,
+ *               including changing passwords and deleting user accounts.
+ */
 public class SettingsPanel extends JPanel {
 
+    /**
+     * Callback interface to handle actions from settings panel.
+     */
     public interface Callback {
         void onSaveChanges(String oldPassword, String newPassword);
         void onCancel();
@@ -14,22 +22,24 @@ public class SettingsPanel extends JPanel {
     private final JPasswordField newPasswordField, oldPasswordField;
     private final JLabel strengthLabel; // Label for showing password strength
 
+    /**
+     * Constructor for SettingsPanel.
+     * Initializes components and layout for user settings management.
+     * @param currentUser The user currently logged in.
+     * @param callback The callback to handle actions.
+     */
     public SettingsPanel(User currentUser, Callback callback) {
         this.callback = callback;
 
-        // Set layout
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
 
-        // Add title
         JLabel titleLabel = new JLabel("Settings", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         add(titleLabel, BorderLayout.NORTH);
 
-        // Main form panel
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new GridBagLayout());
+        JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(Color.WHITE);
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
@@ -38,7 +48,6 @@ public class SettingsPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
 
-        // Username field (read-only for now)
         JLabel usernameLabel = new JLabel("Username:");
         usernameField = new JTextField(currentUser.getUsername());
         usernameField.setEnabled(false);
@@ -52,7 +61,6 @@ public class SettingsPanel extends JPanel {
         gbc.gridx = 1;
         formPanel.add(usernameField, gbc);
 
-        // Old Password field
         JLabel oldPasswordLabel = new JLabel("Old Password:");
         oldPasswordField = new JPasswordField();
         oldPasswordField.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -62,7 +70,6 @@ public class SettingsPanel extends JPanel {
         formPanel.add(oldPasswordLabel, gbc);
         gbc.gridx = 1;
         formPanel.add(oldPasswordField, gbc);
-
 
         JLabel newPasswordLabel = new JLabel("New Password:");
         newPasswordField = new JPasswordField();
@@ -74,7 +81,6 @@ public class SettingsPanel extends JPanel {
         formPanel.add(newPasswordLabel, gbc);
         gbc.gridx = 1;
         formPanel.add(newPasswordField, gbc);
-
 
         JLabel strengthLabelTitle = new JLabel("Password Strength:");
         strengthLabel = new JLabel("Very Weak");
@@ -89,9 +95,7 @@ public class SettingsPanel extends JPanel {
 
         add(formPanel, BorderLayout.CENTER);
 
-        // Action buttons
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 20, 20));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 20));
         buttonPanel.setBackground(Color.WHITE);
 
         JButton saveButton = new JButton("Save");
@@ -119,15 +123,15 @@ public class SettingsPanel extends JPanel {
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
+    /**
+     * Updates the password strength indicator based on the input password's complexity.
+     * @param strengthLabel The label displaying password strength.
+     * @param password The password to analyze.
+     */
     private static void updatePasswordStrengthIndicator(JLabel strengthLabel, String password) {
         int strength = calculatePasswordStrength(password);
         String[] strengthTexts = {
-        		"Very Weak  ", 
-        		"Weak       ", 
-        		"Moderate   ", 
-        		"Strong     ", 
-        		"Very Strong", 
-        		"Excellent  "
+            "Very Weak", "Weak", "Moderate", "Strong", "Very Strong", "Excellent"
         };
         
         Color[] strengthColors = {
@@ -138,11 +142,16 @@ public class SettingsPanel extends JPanel {
         strengthLabel.setForeground(strengthColors[strength]);
     }
 
+    /**
+     * Calculates the strength of a password based on various criteria.
+     * @param password The password to evaluate.
+     * @return An integer representing the strength level of the password.
+     */
     private static int calculatePasswordStrength(String password) {
         int strength = 0;
 
         if (password.length() >= 12) strength += 2;
-        else if (password.length() >= 8) strength += 1;
+        else if (password.length >= 8) strength += 1;
 
         if (password.matches(".*[A-Z].*")) strength += 1;
         if (password.matches(".*[a-z].*")) strength += 1;
@@ -152,6 +161,9 @@ public class SettingsPanel extends JPanel {
         return Math.min(strength, 5);
     }
 
+    /**
+     * Handles the 'Save' action to update user settings based on user input.
+     */
     private void handleSave() {
         String newPassword = new String(newPasswordField.getPassword());
         String oldPassword = new String(oldPasswordField.getPassword());
@@ -164,12 +176,13 @@ public class SettingsPanel extends JPanel {
                 JOptionPane.WARNING_MESSAGE
             );
         } else {
-            // Apply settings and notify callback
             callback.onSaveChanges(oldPassword, newPassword);
         }
     }
 
-    // Listener to dynamically update password strength
+    /**
+     * Listener class for dynamic password strength updates as the user types.
+     */
     private class PasswordStrengthListener implements javax.swing.event.DocumentListener {
         private final JPasswordField passwordField;
 
@@ -198,4 +211,3 @@ public class SettingsPanel extends JPanel {
         }
     }
 }
-
