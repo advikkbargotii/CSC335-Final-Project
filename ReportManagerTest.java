@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
 
+//Author: Richard Posthuma
+//Description: JUnit tests for ReportManager.java class. 
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ReportManagerTest {
