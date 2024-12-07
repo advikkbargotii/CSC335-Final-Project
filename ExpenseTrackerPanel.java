@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+Authors: Primary Author(Ashish Dev Choudhary)
 Description: The ExpenseTrackerPanel class represents the GUI panel for managing expenses.
 			It includes components for viewing, adding, deleting, and filtering expenses,
 			as well as integrating with the ExpenseManager and BudgetManager.
