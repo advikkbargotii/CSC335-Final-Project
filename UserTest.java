@@ -1,6 +1,7 @@
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+// Primary Author: Harshit Jain
 /**
  * Unit tests for the User class.
  */
