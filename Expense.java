@@ -1,4 +1,5 @@
 /**
+  Authors: Primary Author(Ashish Dev Choudhary)
   Description: The Expense class represents a single expense record with details such as
 			  date, category, amount, and description.
 			  This class encapsulates its data through private fields and provides 
